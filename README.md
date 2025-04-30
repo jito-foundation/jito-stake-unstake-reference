@@ -1,21 +1,23 @@
 # JitoSOL Stake/Unstake Reference UI
 
-This project provides a reference UI implementation for staking SOL to the Jito stake pool to receive JitoSOL tokens, and unstaking JitoSOL back to SOL. It demonstrates both assisted methods (using the SPL stake-pool library) and manual methods (building transactions manually) via a Next.js interface.
+This is a reference UI implementation for staking SOL to the Jito stake pool to receive JitoSOL tokens, and unstaking JitoSOL back to SOL. It demonstrates both assisted methods (using the SPL stake-pool library) and manual methods (building transactions manually) via a Next.js interface.
 
 ## Overview
 
-Jito provides a liquid staking solution on Solana, allowing users to stake SOL and receive JitoSOL, representing their staked SOL plus accrued rewards. This reference implementation demonstrates how to build a user interface for interacting with the Jito stake pool, showing:
+This reference implementation demonstrates how to build a user interface for interacting with the Jito stake pool, showing:
 
 1.  **Stake SOL to receive JitoSOL** (Assisted & Manual)
 2.  **Unstake JitoSOL to receive SOL** (Assisted & Manual)
     *   **Assisted Unstake Options:**
-        *   Using the pool's **reserve** for instant SOL withdrawal (subject to fees and liquidity).
-        *   Initiating a **delayed unstake** into a stake account (available after epoch boundary, lower fees).
+        *   Using the pool's **reserve** for instant SOL withdrawal (subject to iquidity).
+        *   Initiating a **withdraw** into a stake account.
         *   Advanced options for specifying validator and destination stake account for delayed unstake.
-    *   **Manual Unstake:** Creates a new stake account representing the unstaked amount.
+    *   **Manual Unstake:** Creates a new stake account for the unstaked amount.
 3.  **Displaying Stake Pool Details:** Shows key metrics about the Jito stake pool.
 4.  **Wallet Integration:** Connects to user wallets via Wallet Adapter.
-5.  **Network Switching:** Allows users to switch between Mainnet and Testnet.
+5.  **Network Switching:** Allows users to switch between Mainnet and Testnet, inside both of which a JitoSOL pool exists.
+
+By offering both **Assisted** (library) and **Manual** (direct) methods for staking and unstaking, it helps show the underlying instructions used to build the stake pool transactions. The idea is to help developers understand, customize, and build upon these interactions.
 
 ## Getting Started
 
@@ -28,7 +30,7 @@ Jito provides a liquid staking solution on Solana, allowing users to stake SOL a
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/jito-stake-unstake-reference.git # Replace with actual repo URL if known
+    git clone https://github.com/jito-foundation/jito-stake-unstake-reference
     cd jito-stake-unstake-reference
     ```
 
@@ -69,11 +71,13 @@ Jito provides a liquid staking solution on Solana, allowing users to stake SOL a
 
 ### Hooks (`hooks/`)
 
+These hooks encapsulate the core logic for interacting with the stake pool. The `Manual` hooks are particularly useful for understanding how the underlying Solana transactions and instructions are constructed, providing a clear basis for further customization.
+
 *   **`useStakePoolInfo.ts`**: Fetches and processes data about the Jito stake pool.
 *   **`useAssistedStake.ts`**: Implements staking using the `@solana/spl-stake-pool` library (`depositSol`).
-*   **`useManualStake.ts`**: Implements staking by manually constructing the `DepositSol` transaction instruction.
+*   **`useManualStake.ts`**: Implements staking by manually constructing the `DepositSol` transaction instruction. Demonstrates the steps involved in creating the instruction, handling accounts (like the associated token account), and sending the transaction. Ideal for learning or customizing the staking process.
 *   **`useAssistedUnstake.ts`**: Implements unstaking using the `@solana/spl-stake-pool` library (`withdrawSol` or `withdrawStake`), handling reserve and delayed options.
-*   **`useManualUnstake.ts`**: Implements unstaking by manually constructing the `WithdrawStake` transaction instruction, creating a new stake account for the user. *Note: This hook replicates some helper functions from the SPL library for instruction creation.*.
+*   **`useManualUnstake.ts`**: Implements unstaking by manually constructing the `WithdrawStake` transaction instruction, creating a new stake account for the user. Shows how to find validator stake accounts, manage temporary accounts, build the instruction manually, and handle necessary signers. Serves as a detailed example for custom unstaking flows. *Note: This hook replicates some helper functions from the SPL library for instruction creation.*.
 
 ### Constants (`constants/index.ts`)
 
@@ -107,11 +111,10 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 ## Important Considerations
 
-1.  **Account Rent & Fees:** Transactions require SOL for network fees and potentially rent-exemption for new accounts (like the temporary stake account in manual unstake).
-2.  **Minimum Balances:** Stake accounts have minimum delegation requirements.
+1.  **Account Rent & Fees:** Transactions require SOL for network fees and potentially rent-exemption for new accounts.
 3.  **Stake Account Deactivation:** Funds withdrawn as stake accounts (via Assisted `useReserve=false` or Manual) are only fully liquid after the stake account deactivates (typically 1-2 epochs).
-4.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs swap fees defined by the stake pool.
-5.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior might differ between networks.
+4.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs fees defined by the stake pool.
+5.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior differ between networks.
 
 ## References
 
