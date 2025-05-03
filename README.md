@@ -8,9 +8,9 @@ This reference implementation demonstrates how to build a user interface for int
 
 1.  **Stake SOL to receive JitoSOL** (Assisted & Manual)
 2.  **Unstake JitoSOL to receive SOL** (Assisted & Manual)
-    *   **Assisted Unstake Options:**
-        *   Using the pool's **reserve** for instant SOL withdrawal (subject to iquidity).
+    *   **Assisted Unstake**
         *   Initiating a **withdraw** into a stake account.
+        *   Via use reserve option: using the pool's **reserve** for instant SOL withdrawal (subject to iquidity and is usually blocked by our chain program in favor of stake).
         *   Advanced options for specifying validator and destination stake account for delayed unstake.
     *   **Manual Unstake:** Creates a new stake account for the unstaked amount.
 3.  **Displaying Stake Pool Details:** Shows key metrics about the Jito stake pool.
@@ -105,8 +105,8 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 ### Unstaking
 
-*   **Assisted (Use Reserve):** Uses `withdrawSol` from `@solana/spl-stake-pool` to instantly swap JitoSOL for SOL directly from the pool's liquid reserve. This is subject to available liquidity and incurs the pool's withdrawal fee.
-*   **Assisted (Withdraw Stake):** Uses `withdrawStake` from `@solana/spl-stake-pool` to convert JitoSOL into a stake account owned by the user, representing their share of the underlying SOL. This stake account then needs to be deactivated (typically takes 1-2 epochs) before the SOL can be fully withdrawn. This method avoids reserve fees but takes longer.
+*   **Assisted (Withdraw Stake):** Uses `withdrawStake` from `@solana/spl-stake-pool` to convert JitoSOL into a stake account owned by the user, representing their share of the underlying SOL. This stake account then needs to be deactivated (which takes 1 epoch) before the SOL can be withdrawn from the stake account. This method avoids reserve fees but takes longer.
+   *   **Assisted (Via Use Reserve):** Uses `withdrawSol` from `@solana/spl-stake-pool` to instantly swap JitoSOL for SOL directly from the pool's liquid reserve. This is subject to available liquidity and is usually blocked by the jito pool in favor of withdrawing stake.
 *   **Manual (Withdraw Stake):** Manually creates the `WithdrawStake` instruction. It finds a suitable validator stake account within the pool to withdraw from and creates a *new* stake account for the user to receive the withdrawn stake. This also requires deactivation before the SOL is fully liquid.
 
 ## Important Considerations
