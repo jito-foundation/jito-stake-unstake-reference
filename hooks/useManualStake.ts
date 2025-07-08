@@ -22,6 +22,10 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /**
  * Hook for manually staking SOL to the Jito stake pool (without using SPL stake pool library functions)
+ * Note: This implementation uses the wallet directly as the funding account,
+ * unlike the standard SPL stake pool library which creates an ephemeral account
+ * and transfers SOL to it first. Both approaches work - we chose the direct
+ * method for simplicity.
  */
 export const useManualStake = () => {
     const { connection } = useConnection();
@@ -68,13 +72,11 @@ export const useManualStake = () => {
 
             const instructions = []
 
-
-            // if (!destinationTokenAccount) {
             const associatedAddress = getAssociatedTokenAddressSync(stakePoolAccount.account.data.poolMint, wallet.publicKey);
             instructions.push(createAssociatedTokenAccountIdempotentInstruction(wallet.publicKey, associatedAddress, wallet.publicKey, stakePoolAccount.account.data.poolMint));
             const destinationTokenAccount = associatedAddress
-            // }
 
+            // Note: Using wallet directly as funding account (no ephemeral transfer like in spl stake pool library)
             const keys = [
                 { pubkey: JITO_STAKE_POOL_ADDRESS, isSigner: false, isWritable: true },
                 { pubkey: withdrawAuthority, isSigner: false, isWritable: false },
