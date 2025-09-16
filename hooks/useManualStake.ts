@@ -57,7 +57,7 @@ export const useManualStake = () => {
 
             // Get stake pool data to extract addresses
             const stakePoolAccount = await getStakePoolAccount(
-                connection,
+                connection as any,
                 JITO_STAKE_POOL_ADDRESS
             );
 

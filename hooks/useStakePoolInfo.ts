@@ -54,7 +54,7 @@ export const useStakePoolInfo = () => {
       try {
         // Get stake pool data
         const stakePoolAccount = await solanaStakePool.getStakePoolAccount(
-          connection,
+          connection as any,
           JITO_STAKE_POOL_ADDRESS
         );
 

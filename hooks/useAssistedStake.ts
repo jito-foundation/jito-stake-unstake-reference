@@ -44,7 +44,7 @@ export const useAssistedStake = () => {
       
       // Get deposit instructions from SPL stake pool library
       const { instructions, signers } = await solanaStakePool.depositSol(
-        connection,
+        connection as any,
         JITO_STAKE_POOL_ADDRESS,
         wallet.publicKey,
         lamports
