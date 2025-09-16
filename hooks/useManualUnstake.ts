@@ -149,7 +149,7 @@ export const useManualUnstake = () => {
                 throw new Error('Invalid amount specified');
             }
 
-            const stakePoolAccount = await getStakePoolAccount(connection, JITO_STAKE_POOL_ADDRESS);
+            const stakePoolAccount = await getStakePoolAccount(connection as any, JITO_STAKE_POOL_ADDRESS);
             if (!stakePoolAccount) {
                 throw new Error('Failed to get stake pool account data');
             }
@@ -195,15 +195,15 @@ export const useManualUnstake = () => {
                 throw new Error('Failed to fetch validator list');
             }
             const validatorListData = ValidatorListLayout.decode(validatorListAccountInfo.data);
-            
+
             // Find an active validator with enough balance
             let suitableValidatorStakeAddress: PublicKey | null = null;
             let activeValidatorVoteAddress: PublicKey | null = null;
 
-            const minimumRequiredLamports_Mainnet = 3282880; 
+            const minimumRequiredLamports_Mainnet = 3282880;
             const minimumRequiredLamports_Testnet = 1002282880; // Value for testnet min
-            const minimumRequiredLamports = network === WalletAdapterNetwork.Testnet 
-                ? minimumRequiredLamports_Testnet 
+            const minimumRequiredLamports = network === WalletAdapterNetwork.Testnet
+                ? minimumRequiredLamports_Testnet
                 : minimumRequiredLamports_Mainnet;
 
             console.log(`Using minimumRequiredLamports for ${network}: ${minimumRequiredLamports}`);
@@ -232,11 +232,11 @@ export const useManualUnstake = () => {
 
                     const estimatedNeededStakeLamports = Math.floor(lamports * 2); // Add 100% buffer
                     const availableLamports = sourceStakeAccInfo.lamports - minimumRequiredLamports;
-                    
+
                     console.log(`   -> Available lamports: ${availableLamports}`);
                     console.log(`   -> Estimated needed stake lamports: ${estimatedNeededStakeLamports}`);
                     // Check if the account has enough lamports ABOVE the minimum required
-                    if (availableLamports > estimatedNeededStakeLamports) { 
+                    if (availableLamports > estimatedNeededStakeLamports) {
                         console.log(`   -> Suitable validator found! Using stake account ${derivedStakeAddress.toBase58()}`);
                         suitableValidatorStakeAddress = derivedStakeAddress;
                         activeValidatorVoteAddress = voteAddress;
@@ -328,11 +328,11 @@ export const useManualUnstake = () => {
             toast.success(
                 `Transaction Confirmed! View: <br />https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
                 {
-                  duration: 8000,
-                  style: {
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                  },
+                    duration: 8000,
+                    style: {
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                    },
                 }
             );
 

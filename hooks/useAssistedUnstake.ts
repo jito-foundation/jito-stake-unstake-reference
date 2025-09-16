@@ -44,7 +44,7 @@ export const useAssistedUnstake = () => {
         let toastId = toast.loading('Preparing unstaking transaction...');
 
         const stakePoolAccount = await solanaStakePool.getStakePoolAccount(
-            connection,
+            connection as any,
             JITO_STAKE_POOL_ADDRESS
         );
 
