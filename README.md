@@ -107,33 +107,39 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 ### Staking
 
+---
+
 #### SOL Deposit Methods
 
-**Assisted Method**
+##### Assisted Method
 * Uses `depositSol` from `@solana/spl-stake-pool`
 * Directly deposits SOL into the stake pool
 
-**Manual Method**
+##### Manual Method
 * Manually creates the `DepositSol` instruction
 * Includes finding/creating the associated token account for JitoSOL
 * Demonstrates low-level transaction construction
 
+---
+
 #### Stake Account Deposit Methods
 
-**Assisted Method**
-* Uses `depositStake` from `@jito-foundation/stake-deposit-interceptor`
+##### Assisted Method
+* Uses `depositStake` from `@jito-foundation/stake-deposit-interceptor-sdk`
 * Creates a new stake account with the specified amount
 * Delegates the stake account to a selected validator
 * Authorizes and deposits the stake account via the interceptor wrapper program
 * The interceptor program manages the deposit process and provides a deposit receipt
 
-**Manual Method**
+##### Manual Method
 * Manually constructs all instructions for stake account deposit
 * Creates a stake account and delegates it to a validator
 * Authorizes the stake-deposit authority as both staker and withdrawer
 * Manually builds the `DepositStake` instruction for the interceptor program
 * Demonstrates the complete low-level flow including PDA derivations and account setup
 * Shows how JitoSOL uniquely requires the stake-deposit-interceptor wrapper program for stake deposits
+
+---
 
 ### Unstaking
 
@@ -160,12 +166,13 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 ## Important Considerations
 
-1.  **Account Rent & Fees:** Transactions require SOL for network fees and potentially rent-exemption for new accounts. Stake account deposits require additional rent for the stake account creation.
+1.  **Account Rent & Fees:** Transactions require SOL for network fees and potentially rent-exemption for new accounts.
 2.  **Stake Deposit Interceptor:** JitoSOL requires using the stake-deposit-interceptor wrapper program (program ID: `5TAiuAh3YGDbwjEruC1ZpXTJWdNDS7Ur7VeqNNiHMmGV`) for depositing stake accounts. This program manages the authorization and deposit process, creating a deposit receipt that can later be used to claim pool tokens.
-3.  **Stake Account Deactivation:** Funds withdrawn as stake accounts (via Assisted `useReserve=false` or Manual) are only fully liquid after the stake account deactivates (typically 1-2 epochs).
-4.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs fees defined by the stake pool.
-5.  **Validator Selection:** When depositing stake accounts, you must select a validator from the pool's active validator list. The stake account will be delegated to this validator before deposit.
-6.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior differ between networks.
+3.  **Stake Account Deposits - Example vs Production:** This reference implementation creates new stake accounts for demonstration purposes. In typical production use cases, users would deposit existing stake accounts they already own. You do not need to create a new stake account to use the stake deposit method - you can deposit any delegated stake account where you control the stake and withdraw authorities.
+4.  **Stake Account Deactivation:** Funds withdrawn as stake accounts (via Assisted `useReserve=false` or Manual) are only fully liquid after the stake account deactivates (typically 1-2 epochs).
+5.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs fees defined by the stake pool.
+6.  **Validator Selection:** In this example, when creating and depositing stake accounts, you must select a validator from the pool's active validator list. The stake account will be delegated to this validator before deposit. For existing stake accounts, they should already be delegated to a validator.
+7.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior differ between networks.
 
 ## References
 
