@@ -59,13 +59,12 @@ const StakeTab: React.FC = () => {
   }, [createStakeAccount.createdStakeAccount]);
 
   const handleCreateStakeAccount = async () => {
-    if (!amount || !wallet.publicKey || !selectedValidator) return;
+    if (!amount || !wallet.publicKey) return;
 
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) return;
 
-    const validatorPubkey = new PublicKey(selectedValidator);
-    const createdAddress = await createStakeAccount.createStakeAccount(amountValue, validatorPubkey);
+    const createdAddress = await createStakeAccount.createStakeAccount(amountValue);
 
     if (createdAddress) {
       fetchBalance();
@@ -252,7 +251,10 @@ const StakeTab: React.FC = () => {
 
               {/* Step 1: Create Stake Account */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Step 1: Create Stake Account</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Step 1: Create Active Stake Account</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  This will deposit SOL and immediately withdraw it as a stake account in one transaction.
+                </p>
 
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
@@ -282,38 +284,14 @@ const StakeTab: React.FC = () => {
                   />
                 </div>
 
-                <div className="mb-4">
-                  <label htmlFor="validator" className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Validator
-                  </label>
-                  {validatorsLoading ? (
-                    <p className="text-sm text-gray-500">Loading validators...</p>
-                  ) : (
-                    <select
-                      id="validator"
-                      value={selectedValidator}
-                      onChange={(e) => setSelectedValidator(e.target.value)}
-                      className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="">Select a validator</option>
-                      {validators.map((validator) => (
-                        <option key={validator.voteAccount.toString()} value={validator.voteAccount.toString()}>
-                          {validator.voteAccount.toString().slice(0, 8)}...{validator.voteAccount.toString().slice(-8)} ({(Number(validator.activeStakeLamports) / LAMPORTS_PER_SOL).toFixed(2)} SOL)
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
                 <Button
                   type="button"
-                  label="Create Stake Account"
+                  label="Create Active Stake Account"
                   width="full"
                   onClick={handleCreateStakeAccount}
                   loading={createStakeAccount.isLoading}
                   disabled={
                     !amount ||
-                    !selectedValidator ||
                     parseFloat(amount) <= 0 ||
                     createStakeAccount.isLoading
                   }
