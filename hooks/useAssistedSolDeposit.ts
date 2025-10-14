@@ -12,9 +12,9 @@ import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /**
- * Hook for staking SOL using the assisted (SPL stake pool) method
+ * Hook for depositing SOL using the assisted (SPL stake pool) method
  */
-export const useAssistedStake = () => {
+export const useAssistedSolDeposit = () => {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [isLoading, setIsLoading] = useState(false);
@@ -22,10 +22,10 @@ export const useAssistedStake = () => {
   const { network } = useNetwork();
 
   /**
-   * Stakes SOL using the SPL stake pool library
-   * @param amount - Amount of SOL to stake (in SOL, not lamports)
+   * Deposits SOL using the SPL stake pool library
+   * @param amount - Amount of SOL to deposit (in SOL, not lamports)
    */
-  const stake = async (amount: number): Promise<boolean> => {
+  const depositSol = async (amount: number): Promise<boolean> => {
     if (!wallet.publicKey || !wallet.signTransaction) {
       toast.error('Wallet not connected');
       return false;
@@ -34,10 +34,10 @@ export const useAssistedStake = () => {
     setIsLoading(true);
     setTxSignature(null);
 
-    const toastId = toast.loading('Preparing staking transaction...');
+    const toastId = toast.loading('Preparing SOL deposit transaction...');
 
     try {
-      console.log(`Staking ${amount} SOL using assisted method...`);
+      console.log(`Depositing ${amount} SOL using assisted method...`);
       
       // Convert SOL to lamports
       const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
@@ -90,9 +90,9 @@ export const useAssistedStake = () => {
         lastValidBlockHeight,
       });
       
-      console.log('Stake transaction successful:', signature);
+      console.log('SOL deposit transaction successful:', signature);
       toast.success(
-        `Successfully staked SOL to JitoSOL! View: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
+        `Successfully deposited SOL to JitoSOL! View: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
         {
           id: toastId,
           duration: 8000,
@@ -104,9 +104,9 @@ export const useAssistedStake = () => {
       );
       return true;
     } catch (err: any) {
-      console.error('Error in assisted stake:', err);
+      console.error('Error in assisted SOL deposit:', err);
       toast.dismiss(toastId);
-      toast.error('Staking failed. Please try again.');
+      toast.error('SOL deposit failed. Please try again.');
       return false;
     } finally {
       // Ensure loading state is reset regardless of success or failure
@@ -115,7 +115,7 @@ export const useAssistedStake = () => {
   };
 
   return {
-    stake,
+    depositSol,
     isLoading,
     txSignature,
   };
