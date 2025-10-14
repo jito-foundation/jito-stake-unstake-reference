@@ -45,11 +45,10 @@ export const useManualStakeDeposit = () => {
     const { network } = useNetwork();
 
     /**
-     * Manually creates and sends a transaction to deposit a stake account to the pool
-     * @param amount - Amount of SOL to stake (in SOL, not lamports)
-     * @param validatorVoteAccount - The validator vote account to delegate to
+     * Manually deposits an existing stake account to the pool
+     * @param stakeAccountAddress - The address of the existing stake account to deposit
      */
-    const stake = async (amount: number, validatorVoteAccount: PublicKey): Promise<boolean> => {
+    const depositStakeAccount = async (stakeAccountAddress: PublicKey): Promise<boolean> => {
         if (!wallet.publicKey || !wallet.signTransaction) {
             toast.error('Wallet not connected');
             return false;
@@ -61,10 +60,25 @@ export const useManualStakeDeposit = () => {
         const toastId = toast.loading('Preparing stake deposit transaction...');
 
         try {
-            console.log(`Staking ${amount} SOL using manual stake deposit method...`);
+            console.log(
+                `Depositing stake account ${stakeAccountAddress.toString()} using manual stake deposit method...`
+            );
 
-            // Convert SOL to lamports
-            const lamportsToStake = Math.floor(amount * LAMPORTS_PER_SOL);
+            // Fetch the stake account to get the validator vote account
+            const stakeAccountInfo = await connection.getAccountInfo(stakeAccountAddress);
+            if (!stakeAccountInfo) {
+                throw new Error('Stake account not found');
+            }
+
+            // Parse stake account data to get the vote account
+            // Stake account structure: first 44 bytes are metadata, then StakeMeta, then Stake
+            // Vote account pubkey is at offset 124 (32 bytes for meta + 12 bytes for rent exempt reserve + 80 bytes for authorized)
+            const VOTE_ACCOUNT_OFFSET = 124;
+            const validatorVoteAccount = new PublicKey(
+                stakeAccountInfo.data.slice(VOTE_ACCOUNT_OFFSET, VOTE_ACCOUNT_OFFSET + 32)
+            );
+
+            console.log(`Detected validator vote account: ${validatorVoteAccount.toString()}`);
 
             // Get stake pool data
             const stakePoolAccount = await getStakePoolAccount(
@@ -92,41 +106,13 @@ export const useManualStakeDeposit = () => {
                 STAKE_POOL_PROGRAM_ID
             );
 
-            // Create a new stake account
-            const stakeAccount = Keypair.generate();
-
-            // Create stake account instruction
-            const minimumRent = await connection.getMinimumBalanceForRentExemption(
-                StakeProgram.space
-            );
-            const createStakeAccountIx = StakeProgram.createAccount({
-                fromPubkey: wallet.publicKey,
-                stakePubkey: stakeAccount.publicKey,
-                authorized: {
-                    staker: wallet.publicKey,
-                    withdrawer: wallet.publicKey,
-                },
-                lamports: lamportsToStake + minimumRent,
-            });
-
-            // Delegate stake instruction
-            const delegateIx = StakeProgram.delegate({
-                stakePubkey: stakeAccount.publicKey,
-                authorizedPubkey: wallet.publicKey,
-                votePubkey: validatorVoteAccount,
-            });
-
             const instructions: TransactionInstruction[] = [];
 
             // Add compute budget
             const setComputeUnitLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-                units: COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS * 2,
+                units: COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS,
             });
             instructions.push(setComputeUnitLimitIx);
-
-            // Add stake account creation and delegation
-            instructions.push(...createStakeAccountIx.instructions);
-            instructions.push(delegateIx);
 
             // Create or get associated token account for JitoSOL
             const poolMint = stakePoolAccount.account.data.poolMint;
@@ -205,7 +191,7 @@ export const useManualStakeDeposit = () => {
                 { pubkey: depositStakeAuthority, isSigner: false, isWritable: false }, // depositStakeAuthority
                 { pubkey: base.publicKey, isSigner: true, isWritable: false }, // base
                 { pubkey: withdrawAuthority, isSigner: false, isWritable: false }, // stakePoolWithdrawAuthority
-                { pubkey: stakeAccount.publicKey, isSigner: false, isWritable: true }, // stake
+                { pubkey: stakeAccountAddress, isSigner: false, isWritable: true }, // stake
                 { pubkey: validatorStake, isSigner: false, isWritable: true }, // validatorStakeAccount
                 {
                     pubkey: stakePoolAccount.account.data.reserveStake,
@@ -250,8 +236,8 @@ export const useManualStakeDeposit = () => {
             transaction.recentBlockhash = blockhash;
             transaction.feePayer = wallet.publicKey;
 
-            // Sign with stake account and base keypair
-            transaction.sign(stakeAccount, base);
+            // Sign with base keypair
+            transaction.sign(base);
 
             toast.loading('Sending transaction...', { id: toastId });
 
@@ -295,7 +281,7 @@ export const useManualStakeDeposit = () => {
     };
 
     return {
-        stake,
+        depositStakeAccount,
         isLoading,
         txSignature,
     };

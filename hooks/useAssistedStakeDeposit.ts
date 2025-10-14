@@ -26,11 +26,10 @@ export const useAssistedStakeDeposit = () => {
     const { network } = useNetwork();
 
     /**
-     * Stakes SOL by creating a stake account and depositing it using the interceptor library
-     * @param amount - Amount of SOL to stake (in SOL, not lamports)
-     * @param validatorVoteAccount - The validator vote account to delegate to
+     * Deposits an existing stake account using the interceptor library
+     * @param stakeAccountAddress - The address of the existing stake account to deposit
      */
-    const stake = async (amount: number, validatorVoteAccount: PublicKey): Promise<boolean> => {
+    const depositStakeAccount = async (stakeAccountAddress: PublicKey): Promise<boolean> => {
         if (!wallet.publicKey || !wallet.signTransaction) {
             toast.error('Wallet not connected');
             return false;
@@ -42,32 +41,25 @@ export const useAssistedStakeDeposit = () => {
         const toastId = toast.loading('Preparing stake deposit transaction...');
 
         try {
-            console.log(`Staking ${amount} SOL using assisted stake deposit method...`);
+            console.log(
+                `Depositing stake account ${stakeAccountAddress.toString()} using assisted stake deposit method...`
+            );
 
-            // Convert SOL to lamports
-            const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
+            // Fetch the stake account to get the validator vote account
+            const stakeAccountInfo = await connection.getAccountInfo(stakeAccountAddress);
+            if (!stakeAccountInfo) {
+                throw new Error('Stake account not found');
+            }
 
-            // Create a new stake account
-            const stakeAccount = Keypair.generate();
+            // Parse stake account data to get the vote account
+            // Stake account structure: first 44 bytes are metadata, then StakeMeta, then Stake
+            // Vote account pubkey is at offset 124 (32 bytes for meta + 12 bytes for rent exempt reserve + 80 bytes for authorized)
+            const VOTE_ACCOUNT_OFFSET = 124;
+            const validatorVoteAccount = new PublicKey(
+                stakeAccountInfo.data.slice(VOTE_ACCOUNT_OFFSET, VOTE_ACCOUNT_OFFSET + 32)
+            );
 
-            // Create stake account instruction
-            const minimumRent = await connection.getMinimumBalanceForRentExemption(StakeProgram.space);
-            const createStakeAccountIx = StakeProgram.createAccount({
-                fromPubkey: wallet.publicKey,
-                stakePubkey: stakeAccount.publicKey,
-                authorized: {
-                    staker: wallet.publicKey,
-                    withdrawer: wallet.publicKey,
-                },
-                lamports: lamports + minimumRent,
-            });
-
-            // Delegate stake instruction
-            const delegateIx = StakeProgram.delegate({
-                stakePubkey: stakeAccount.publicKey,
-                authorizedPubkey: wallet.publicKey,
-                votePubkey: validatorVoteAccount,
-            });
+            console.log(`Detected validator vote account: ${validatorVoteAccount.toString()}`);
 
             // Get deposit stake instructions from interceptor library
             const { instructions: depositInstructions, signers: depositSigners } = await depositStake(
@@ -76,7 +68,7 @@ export const useAssistedStakeDeposit = () => {
                 JITO_STAKE_POOL_ADDRESS,
                 wallet.publicKey, // authorizedPubkey
                 validatorVoteAccount,
-                stakeAccount.publicKey, // depositStake
+                stakeAccountAddress, // depositStake
             );
 
             // Create transaction
@@ -84,24 +76,24 @@ export const useAssistedStakeDeposit = () => {
 
             // Add compute budget instruction
             const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
-                units: COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS * 2,
+                units: COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS,
             });
             transaction.add(computeBudgetIx);
-
-            // Add stake account creation and delegation
-            transaction.add(...createStakeAccountIx.instructions);
-            transaction.add(delegateIx);
 
             // Add deposit instructions
             transaction.add(...depositInstructions);
 
             // Get recent blockhash
-            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(
+                'finalized'
+            );
             transaction.recentBlockhash = blockhash;
             transaction.feePayer = wallet.publicKey;
 
-            // Sign with stake account and any additional signers from the deposit instruction
-            transaction.sign(stakeAccount, ...depositSigners);
+            // Sign with any additional signers from the deposit instruction
+            if (depositSigners.length > 0) {
+                transaction.sign(...depositSigners);
+            }
 
             toast.loading('Sending transaction...', { id: toastId });
 
@@ -145,7 +137,7 @@ export const useAssistedStakeDeposit = () => {
     };
 
     return {
-        stake,
+        depositStakeAccount,
         isLoading,
         txSignature,
     };

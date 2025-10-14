@@ -81,8 +81,9 @@ These hooks encapsulate the core logic for interacting with the stake pool. The 
 *   **`useValidators.ts`**: Fetches the list of active validators in the stake pool for stake account deposits.
 *   **`useAssistedSolDeposit.ts`**: Implements SOL deposit using the `@solana/spl-stake-pool` library (`depositSol`). Directly deposits SOL into the stake pool in exchange for JitoSOL.
 *   **`useManualSolDeposit.ts`**: Implements SOL deposit by manually constructing the `DepositSol` transaction instruction. Demonstrates the steps involved in creating the instruction, handling accounts (like the associated token account), and sending the transaction. Ideal for learning or customizing the SOL deposit process.
-*   **`useAssistedStakeDeposit.ts`**: Implements stake account deposit using the `@jito-foundation/stake-deposit-interceptor-sdk` library. Creates a stake account, delegates it to a chosen validator, and deposits it via the interceptor wrapper program.
-*   **`useManualStakeDeposit.ts`**: Implements stake account deposit by manually constructing the transaction with the stake-deposit-interceptor program. Shows how to create a stake account, authorize it, and build the `DepositStake` instruction manually. Provides full control over the deposit process.
+*   **`useCreateStakeAccount.ts`**: Creates and delegates a new stake account to a validator. This is the first step before depositing to the stake pool using the stake deposit method.
+*   **`useAssistedStakeDeposit.ts`**: Implements stake account deposit using the `@jito-foundation/stake-deposit-interceptor-sdk` library. Accepts an existing delegated stake account and deposits it via the interceptor wrapper program.
+*   **`useManualStakeDeposit.ts`**: Implements stake account deposit by manually constructing the transaction with the stake-deposit-interceptor program. Accepts an existing delegated stake account, authorizes it, and builds the `DepositStake` instruction manually. Provides full control over the deposit process.
 *   **`useAssistedUnstake.ts`**: Implements unstaking using the `@solana/spl-stake-pool` library (`withdrawSol` or `withdrawStake`), handling reserve and delayed options.
 *   **`useManualUnstake.ts`**: Implements unstaking by manually constructing the `WithdrawStake` transaction instruction, creating a new stake account for the user. Shows how to find validator stake accounts, manage temporary accounts, build the instruction manually, and handle necessary signers. Serves as a detailed example for custom unstaking flows. *Note: This hook replicates some helper functions from the SPL library for instruction creation.*.
 
@@ -124,20 +125,32 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 #### Stake Account Deposit Methods
 
+**Important:** Stake account deposits use a **two-step process** to keep transactions within size limits:
+
+**Step 1: Create and Delegate Stake Account** (using `useCreateStakeAccount`)
+* Creates a new stake account with the specified amount
+* Delegates the stake account to a selected validator from the pool
+* Returns the stake account address for use in Step 2
+
+**Step 2: Deposit Stake Account to Pool**
+
 ##### Assisted Method
 * Uses `depositStake` from `@jito-foundation/stake-deposit-interceptor-sdk`
-* Creates a new stake account with the specified amount
-* Delegates the stake account to a selected validator
+* Accepts an existing delegated stake account address
+* Automatically detects the validator the stake is delegated to by reading the stake account data
 * Authorizes and deposits the stake account via the interceptor wrapper program
-* The interceptor program manages the deposit process and provides a deposit receipt
+* The interceptor program manages the authorization and deposit process, creating a deposit receipt that can later be used to claim pool tokens
 
 ##### Manual Method
 * Manually constructs all instructions for stake account deposit
-* Creates a stake account and delegates it to a validator
+* Accepts an existing delegated stake account address
+* Automatically detects the validator the stake is delegated to by parsing the stake account data
 * Authorizes the stake-deposit authority as both staker and withdrawer
 * Manually builds the `DepositStake` instruction for the interceptor program
 * Demonstrates the complete low-level flow including PDA derivations and account setup
 * Shows how JitoSOL uniquely requires the stake-deposit-interceptor wrapper program for stake deposits
+
+**Note:** In production use cases, users typically already have delegated stake accounts and would skip Step 1, going directly to Step 2 with their existing stake account addresses.
 
 ---
 
@@ -168,10 +181,10 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 1.  **Account Rent & Fees:** Transactions require SOL for network fees and potentially rent-exemption for new accounts.
 2.  **Stake Deposit Interceptor:** JitoSOL requires using the stake-deposit-interceptor wrapper program (program ID: `5TAiuAh3YGDbwjEruC1ZpXTJWdNDS7Ur7VeqNNiHMmGV`) for depositing stake accounts. This program manages the authorization and deposit process, creating a deposit receipt that can later be used to claim pool tokens.
-3.  **Stake Account Deposits - Example vs Production:** This reference implementation creates new stake accounts for demonstration purposes. In typical production use cases, users would deposit existing stake accounts they already own. You do not need to create a new stake account to use the stake deposit method - you can deposit any delegated stake account where you control the stake and withdraw authorities.
+3.  **Stake Account Deposits - Two-Step Process:** This implementation separates stake account creation from deposit to keep transactions within size limits. Step 1 creates and delegates a stake account. Step 2 deposits it to the pool via the interceptor. In production, users typically already have delegated stake accounts and would skip Step 1, using the deposit methods directly with their existing stake account addresses.
 4.  **Stake Account Deactivation:** Funds withdrawn as stake accounts (via Assisted `useReserve=false` or Manual) are only fully liquid after the stake account deactivates (typically 1-2 epochs).
 5.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs fees defined by the stake pool.
-6.  **Validator Selection:** In this example, when creating and depositing stake accounts, you must select a validator from the pool's active validator list. The stake account will be delegated to this validator before deposit. For existing stake accounts, they should already be delegated to a validator.
+6.  **Validator Selection:** When creating stake accounts (Step 1), you must select a validator from the pool's active validator list to delegate to. When depositing (Step 2), the validator is automatically detected from the stake account data - no manual selection needed.
 7.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior differ between networks.
 
 ## References

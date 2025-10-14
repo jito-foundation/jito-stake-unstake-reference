@@ -1,10 +1,8 @@
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useState, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { getStakePoolAccount } from '@solana/spl-stake-pool';
+import { getStakePoolAccount, ValidatorListLayout } from '@solana/spl-stake-pool';
 import { JITO_STAKE_POOL_ADDRESS } from '../constants';
-import * as BufferLayout from '@solana/buffer-layout';
-import * as Layout from '@solana/buffer-layout-utils';
 
 // Validator info structure from the validator list
 interface ValidatorInfo {
@@ -12,27 +10,6 @@ interface ValidatorInfo {
     status: number;
     activeStakeLamports: bigint;
 }
-
-// Layout for the validator list account
-const ValidatorListLayout = BufferLayout.struct([
-    BufferLayout.u32('accountType'),
-    BufferLayout.u32('maxValidators'),
-    BufferLayout.u32('validatorCount'),
-    BufferLayout.seq(
-        BufferLayout.struct([
-            Layout.publicKey('voteAccountAddress'),
-            BufferLayout.nu64('activeStakeLamports'),
-            BufferLayout.nu64('transientStakeLamports'),
-            BufferLayout.nu64('lastUpdateEpoch'),
-            BufferLayout.nu64('transientSeedSuffixStart'),
-            BufferLayout.nu64('transientSeedSuffixEnd'),
-            BufferLayout.u8('status'),
-            BufferLayout.seq(BufferLayout.u8(), 7, 'padding'),
-        ]),
-        BufferLayout.u32(),
-        'validators'
-    ),
-]);
 
 export interface Validator {
     voteAccount: PublicKey;
