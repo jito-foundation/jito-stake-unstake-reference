@@ -77,7 +77,7 @@ export const useCreateStakeAccount = () => {
             // poolTokensOut = (lamports * poolTokenSupply) / totalLamports
             const poolTokenSupply = stakePoolAccount.account.data.poolTokenSupply;
             const totalLamports = stakePoolAccount.account.data.totalLamports;
-            const poolTokensToReceive = Number((BigInt(lamports) * BigInt(poolTokenSupply)) / BigInt(totalLamports));
+            const poolTokensToReceive = Number((BigInt(lamports) * BigInt(poolTokenSupply.toString())) / BigInt(totalLamports.toString()));
 
             console.log(`Will receive ${poolTokensToReceive} pool tokens from deposit`);
 

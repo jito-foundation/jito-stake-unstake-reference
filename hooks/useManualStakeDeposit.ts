@@ -144,7 +144,7 @@ export const useManualStakeDeposit = () => {
             // Authorize the stake pool deposit authority for both staker and withdrawer
             instructions.push(
                 ...StakeProgram.authorize({
-                    stakePubkey: stakeAccount.publicKey,
+                    stakePubkey: stakeAccountAddress,
                     authorizedPubkey: wallet.publicKey,
                     newAuthorizedPubkey: depositStakeAuthority,
                     stakeAuthorizationType: StakeAuthorizationLayout.Staker,
@@ -152,7 +152,7 @@ export const useManualStakeDeposit = () => {
             );
             instructions.push(
                 ...StakeProgram.authorize({
-                    stakePubkey: stakeAccount.publicKey,
+                    stakePubkey: stakeAccountAddress,
                     authorizedPubkey: wallet.publicKey,
                     newAuthorizedPubkey: depositStakeAuthority,
                     stakeAuthorizationType: StakeAuthorizationLayout.Withdrawer,
