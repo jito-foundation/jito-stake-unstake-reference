@@ -40,6 +40,8 @@ By offering both **Assisted** (library) and **Manual** (direct) methods for stak
     # or
     yarn install
     ```
+    
+    **Note:** This project uses a frozen lockfile (`.yarnrc`) to ensure deterministic, secure dependency installation and prevent unexpected package updates.
 
 3.  (Optional) Set up environment variables:
     Create a `.env.local` file in the root directory. You can specify a custom Mainnet RPC endpoint if needed:
