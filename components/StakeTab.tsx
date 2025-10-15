@@ -8,9 +8,9 @@ import dynamic from 'next/dynamic';
 
 const WalletMultiButton = dynamic(
   () =>
-      import('@solana/wallet-adapter-react-ui').then(
-          (mod) => mod.WalletMultiButton,
-      ),
+    import('@solana/wallet-adapter-react-ui').then(
+      (mod) => mod.WalletMultiButton,
+    ),
   { ssr: false },
 )
 
@@ -42,21 +42,21 @@ const StakeTab: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!amount || !wallet.publicKey) return;
-    
+
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) return;
-    
+
     let success = false;
-    
+
     try {
       if (stakeMethod === StakeMethod.ASSISTED) {
         success = await assistedStake.stake(amountValue);
       } else {
         success = await manualStake.stake(amountValue);
       }
-      
+
       if (success) {
         setAmount('');
         fetchBalance();
@@ -67,9 +67,9 @@ const StakeTab: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="w-full mx-auto p-2 sm:p-6 bg-white">
       <h2 className="text-2xl font-bold mb-6 text-black">Stake SOL to JitoSOL</h2>
-      
+
       {!wallet.publicKey ? (
         <div className="flex flex-col items-center justify-center py-6">
           <p className="mb-4 text-gray-600">Connect your wallet to get started</p>
@@ -83,7 +83,7 @@ const StakeTab: React.FC = () => {
                 Amount to Stake
               </label>
               {balance !== null && (
-                <span className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 text-right">
                   Balance: {balance.toFixed(4)} SOL
                   <button
                     type="button"
@@ -92,7 +92,7 @@ const StakeTab: React.FC = () => {
                   >
                     Max
                   </button>
-                </span>
+                </div>
               )}
             </div>
             <input
@@ -104,7 +104,7 @@ const StakeTab: React.FC = () => {
               className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          
+
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Stake Method
@@ -112,22 +112,20 @@ const StakeTab: React.FC = () => {
             <div className="flex gap-4">
               <button
                 type="button"
-                className={`py-2 px-4 rounded-md ${
-                  stakeMethod === StakeMethod.ASSISTED
+                className={`py-2 px-4 rounded-md ${stakeMethod === StakeMethod.ASSISTED
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-200 text-gray-800'
-                }`}
+                  }`}
                 onClick={() => setStakeMethod(StakeMethod.ASSISTED)}
               >
                 Assisted
               </button>
               <button
                 type="button"
-                className={`py-2 px-4 rounded-md ${
-                  stakeMethod === StakeMethod.MANUAL
+                className={`py-2 px-4 rounded-md ${stakeMethod === StakeMethod.MANUAL
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-200 text-gray-800'
-                }`}
+                  }`}
                 onClick={() => setStakeMethod(StakeMethod.MANUAL)}
               >
                 Manual
@@ -139,7 +137,7 @@ const StakeTab: React.FC = () => {
                 : 'Manual staking constructs the transactions manually for greater control.'}
             </p>
           </div>
-          
+
           <Button
             type="button"
             label="Stake SOL"
@@ -147,13 +145,13 @@ const StakeTab: React.FC = () => {
             onClick={handleSubmit}
             loading={assistedStake.isLoading || manualStake.isLoading}
             disabled={
-              !amount || 
-              parseFloat(amount) <= 0 || 
-              assistedStake.isLoading || 
+              !amount ||
+              parseFloat(amount) <= 0 ||
+              assistedStake.isLoading ||
               manualStake.isLoading
             }
           />
-          
+
         </>
       )}
     </div>

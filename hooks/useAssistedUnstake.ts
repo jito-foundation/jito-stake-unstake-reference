@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 // import * as splStakePool from '@solana/spl-stake-pool/dist/index.cjs';
-import { TransactionMessage, VersionedTransaction, ComputeBudgetProgram, Transaction, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { TransactionMessage, VersionedTransaction, ComputeBudgetProgram, Transaction, PublicKey } from '@solana/web3.js';
 import { COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS, JITO_STAKE_POOL_ADDRESS } from '../constants';
 import toast from 'react-hot-toast';
 import * as solanaStakePool from '@solana/spl-stake-pool';
@@ -41,7 +41,7 @@ export const useAssistedUnstake = () => {
         // Clear previous state
         setIsLoading(true);
         setTxSignature(null);
-        let toastId = toast.loading('Preparing unstaking transaction...');
+        const toastId = toast.loading('Preparing unstaking transaction...');
 
         const stakePoolAccount = await solanaStakePool.getStakePoolAccount(
             connection as any,
@@ -61,12 +61,11 @@ export const useAssistedUnstake = () => {
                 return false;
             }
 
-
             // Call withdrawStake with parameters based on the unstake options
             const withdrawStakeArgs = [
                 connection,                           // connection
                 JITO_STAKE_POOL_ADDRESS,              // stakePoolAddress
-                wallet.publicKey,                    // tokenOwner (added non-null assertion)
+                wallet.publicKey,                     // tokenOwner (added non-null assertion)
                 amount,                               // amount -- in JitoSOL, not decimal adjusted
                 unstakeParams.useReserve              // useReserve
             ];
@@ -85,14 +84,13 @@ export const useAssistedUnstake = () => {
                 withdrawStakeArgs.push(unstakeParams.stakeReceiver); // stakeReceiver (7th arg)
             }
 
-            // log with all converted to strings
             console.log("withdrawStakeArgs", withdrawStakeArgs.map(arg => arg?.toString()));
-            // Call withdrawStake with spread
+
             const { instructions: withdrawInstructions, signers, stakeReceiver } = await solanaStakePool.withdrawStake(
                 ...withdrawStakeArgs as Parameters<typeof solanaStakePool.withdrawStake>
             );
 
-            let instructions = []
+            const instructions = []
 
             const setComputeUnitLimitIx =
                 ComputeBudgetProgram.setComputeUnitLimit({
@@ -102,7 +100,7 @@ export const useAssistedUnstake = () => {
             instructions.push(setComputeUnitLimitIx)
             instructions.push(...withdrawInstructions);
 
-            let transaction = new Transaction();
+            const transaction = new Transaction();
             transaction.add(...instructions);
 
             console.log("stakeReceiver", stakeReceiver?.toString());
