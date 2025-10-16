@@ -1,7 +1,7 @@
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useState, useEffect } from 'react';
 import * as solanaStakePool from '@solana/spl-stake-pool';
-import { JITO_STAKE_POOL_ADDRESS, LAMPORTS_PER_SOL } from '../constants';
+import { JITO_STAKE_POOL_ADDRESS } from '../constants';
 import { PublicKey, AccountInfo } from '@solana/web3.js';
 import BN from 'bn.js';
 

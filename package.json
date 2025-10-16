@@ -6,17 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prepare": "husky"
   },
   "dependencies": {
     "@solana/buffer-layout-utils": "0.2.0",
     "@solana/spl-stake-pool": "1.1.8",
     "@solana/spl-token": "0.4.13",
-    "@solana/wallet-adapter-wallets": "0.19.37",
     "@solana/wallet-adapter-base": "0.9.27",
     "@solana/wallet-adapter-ledger": "0.9.29",
     "@solana/wallet-adapter-react": "0.15.39",
     "@solana/wallet-adapter-react-ui": "0.9.39",
+    "@solana/wallet-adapter-wallets": "0.19.37",
     "@solana/web3.js": "1.98.0",
     "bignumber.js": "9.1.2",
     "classnames": "2.5.1",
@@ -30,25 +31,18 @@
     "@types/node": "20.17.10",
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
     "autoprefixer": "10.4.21",
     "eslint": "8.57.1",
     "eslint-config-next": "13.5.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
     "postcss": "8.5.3",
     "tailwindcss": "3.4.17",
     "typescript": "5.8.3"
   },
-  "resolutions": {
-    "strip-ansi": "7.1.0",
-    "debug": "4.4.0",
-    "color-convert": "2.0.1", 
-    "color-name": "1.1.4",
-    "color-string": "1.9.1",
-    "simple-swizzle": "0.2.2",
-    "is-arrayish": "0.3.2",
-    "chalk": "5.4.1",
-    "supports-color": "7.2.0",
-    "ansi-styles": "6.2.1",
-    "wrap-ansi": "8.1.0",
-    "ansi-regex": "6.1.0"
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": "eslint --fix"
   }
 }
