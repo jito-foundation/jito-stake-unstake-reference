@@ -23,8 +23,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNetworkChange, currentNetwork }) => {
                 <div className="flex justify-between h-16">
                     <div className="flex items-center">
                         <Link href="/">
-                            <span className="text-xl font-bold text-gray-900 cursor-pointer">
-                                Reference Guide
+                            <span className="text-sm xs:text-lg sm:text-xl font-bold text-gray-900 cursor-pointer">
+                                JitoSOL Reference Site
                             </span>
                         </Link>
                     </div>

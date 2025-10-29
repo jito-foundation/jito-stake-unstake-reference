@@ -18,11 +18,11 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="max-w-4xl mx-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-gray-900">JitoSOL Staking Reference</h1>
-          <p className="mt-3 text-lg text-gray-600">
-            Stake and Unstake SOL with Jito staking pool
+      <main className="max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">JitoSOL / Staking Reference Site</h1>
+          <p className="mt-2 text-lg text-gray-600">
+            Stake and Unstake SOL Examples
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-16 text-center text-sm sm:text-base">
           <p className="text-gray-500">
             This is a reference implementation for educational purposes.
           </p>

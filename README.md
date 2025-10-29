@@ -42,6 +42,8 @@ By offering both **Assisted** (library) and **Manual** (direct) methods for stak
     # or
     yarn install
     ```
+    
+    **Note:** This project uses a frozen lockfile (`.yarnrc`) to ensure deterministic, secure dependency installation and prevent unexpected package updates.
 
     Note: The `@jito-foundation/stake-deposit-interceptor-sdk` package is installed from npm.
 

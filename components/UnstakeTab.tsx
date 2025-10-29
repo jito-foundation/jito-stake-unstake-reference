@@ -91,7 +91,7 @@ const UnstakeTab: React.FC = () => {
         if (!useReserve && showAdvancedOptions && voteAccountAddress) {
           try {
             params.voteAccountAddress = new PublicKey(voteAccountAddress);
-          } catch (err) {
+          } catch {
             toast.error('Invalid vote account address');
             return;
           }
@@ -101,7 +101,7 @@ const UnstakeTab: React.FC = () => {
         if (!useReserve && showAdvancedOptions && stakeReceiver) {
           try {
             params.stakeReceiver = new PublicKey(stakeReceiver);
-          } catch (err) {
+          } catch {
             toast.error('Invalid stake receiver address');
             return;
           }
@@ -124,7 +124,7 @@ const UnstakeTab: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="w-full mx-auto p-2 sm:p-6 bg-white">
       <h2 className="text-2xl font-bold mb-6 text-black">Unstake JitoSOL to SOL</h2>
       
       {!wallet.publicKey ? (
@@ -140,7 +140,7 @@ const UnstakeTab: React.FC = () => {
                 Amount to Unstake
               </label>
               {jitoSolBalance !== null && (
-                <span className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 text-right">
                   Balance: {jitoSolBalance.toFixed(4)} jitoSOL
                   <button
                     type="button"
@@ -149,7 +149,7 @@ const UnstakeTab: React.FC = () => {
                   >
                     Max
                   </button>
-                </span>
+                </div>
               )}
             </div>
             <input

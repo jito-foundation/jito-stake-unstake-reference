@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import Button from './Button';
 import { useAssistedSolDeposit } from '../hooks/useAssistedSolDeposit';
@@ -6,23 +6,21 @@ import { useManualSolDeposit } from '../hooks/useManualSolDeposit';
 import { useAssistedStakeDeposit } from '../hooks/useAssistedStakeDeposit';
 import { useManualStakeDeposit } from '../hooks/useManualStakeDeposit';
 import { useCreateStakeAccount } from '../hooks/useCreateStakeAccount';
-import { useValidators } from '../hooks/useValidators';
 import { LAMPORTS_PER_SOL, StakeMethod } from '../constants';
 import { PublicKey } from '@solana/web3.js';
 import dynamic from 'next/dynamic';
 
 const WalletMultiButton = dynamic(
   () =>
-      import('@solana/wallet-adapter-react-ui').then(
-          (mod) => mod.WalletMultiButton,
-      ),
+    import('@solana/wallet-adapter-react-ui').then(
+      (mod) => mod.WalletMultiButton,
+    ),
   { ssr: false },
 )
 
 const StakeTab: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
   const [stakeMethod, setStakeMethod] = useState<StakeMethod>(StakeMethod.ASSISTED_SOL_DEPOSIT);
-  const [selectedValidator, setSelectedValidator] = useState<string>('');
   const [stakeAccountAddress, setStakeAccountAddress] = useState<string>('');
   const wallet = useWallet();
   const { connection } = useConnection();
@@ -32,15 +30,14 @@ const StakeTab: React.FC = () => {
   const assistedStakeDeposit = useAssistedStakeDeposit();
   const manualStakeDeposit = useManualStakeDeposit();
   const createStakeAccount = useCreateStakeAccount();
-  const { validators, isLoading: validatorsLoading } = useValidators();
 
   // Get wallet SOL balance
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     if (wallet.publicKey) {
       const balance = await connection.getBalance(wallet.publicKey);
       setBalance(balance / LAMPORTS_PER_SOL);
     }
-  };
+  }, [wallet.publicKey, connection]);
 
   // Fetch balance when wallet connects
   useEffect(() => {
@@ -49,7 +46,7 @@ const StakeTab: React.FC = () => {
     } else {
       setBalance(null);
     }
-  }, [wallet?.publicKey, connection?.rpcEndpoint]);
+  }, [wallet?.publicKey, fetchBalance]);
 
   // Auto-fill stake account address when created
   useEffect(() => {
@@ -121,7 +118,7 @@ const StakeTab: React.FC = () => {
     stakeMethod === StakeMethod.MANUAL_STAKE_DEPOSIT;
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="w-full mx-auto p-2 sm:p-6 bg-white">
       <h2 className="text-2xl font-bold mb-6 text-black">Stake SOL to JitoSOL</h2>
 
       {!wallet.publicKey ? (

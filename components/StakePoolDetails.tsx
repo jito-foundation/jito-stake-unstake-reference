@@ -105,7 +105,7 @@ const StakePoolDetails: React.FC<StakePoolDetailsProps> = ({ poolInfo, isLoading
 
   return (
     <div className="bg-white shadow rounded-lg p-6 mb-8 border border-gray-200">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">Jito Stake Pool Details</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-6 text-left">Jito Stake Pool Details</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
         {displayedDetails.map(({ label, value, rawValue, type }) => (
           <div key={label} className="flex justify-between items-center py-1 border-b border-gray-100">
