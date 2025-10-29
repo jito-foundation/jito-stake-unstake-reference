@@ -64,6 +64,7 @@ const StakeTab: React.FC = () => {
     const createdAddress = await createStakeAccount.createStakeAccount(amountValue);
 
     if (createdAddress) {
+      setAmount('');
       fetchBalance();
     }
   };

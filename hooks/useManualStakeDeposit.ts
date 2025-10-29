@@ -1,7 +1,6 @@
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
     Transaction,
-    LAMPORTS_PER_SOL,
     PublicKey,
     ComputeBudgetProgram,
     SystemProgram,
@@ -258,14 +257,16 @@ export const useManualStakeDeposit = () => {
             });
 
             console.log('Manual stake deposit transaction successful:', signature);
+            console.log('Deposit receipt address:', depositReceiptAddress.toString());
             toast.success(
-                `Successfully deposited stake to JitoSOL! View: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
+                `Stake successfully deposited to Jito interceptor! Stake will be automatically added to pool in ~10 hours. To view status of your intercepted stake, visit https://www.jito.network/interceptor/\n\nDeposit Receipt: ${depositReceiptAddress.toString()}\n\nTx: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
                 {
                     id: toastId,
-                    duration: 8000,
+                    duration: 15000,
                     style: {
                         overflowWrap: 'break-word',
                         wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap',
                     },
                 }
             );
