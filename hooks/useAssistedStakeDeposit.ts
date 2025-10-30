@@ -4,17 +4,12 @@ import {
     PublicKey,
     ComputeBudgetProgram,
 } from '@solana/web3.js';
-import { COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS, JITO_STAKE_POOL_ADDRESS } from '../constants';
+import { COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS, JITO_STAKE_POOL_ADDRESS, STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID } from '../constants';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { depositStake } from '@jito-foundation/stake-deposit-interceptor-sdk';
-
-// Stake Deposit Interceptor Program ID
-const STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID = new PublicKey(
-    '5TAiuAh3YGDbwjEruC1ZpXTJWdNDS7Ur7VeqNNiHMmGV'
-);
 
 /**
  * Hook for depositing stake accounts to the Jito stake pool using the assisted (interceptor library) method.
@@ -74,18 +69,19 @@ export const useAssistedStakeDeposit = () => {
             );
 
             // The base keypair is in the signers array - derive the deposit receipt from it
-            const baseKeypair = depositSigners.find(s => s.publicKey);
-            let depositReceiptAddress: PublicKey | null = null;
-            if (baseKeypair) {
-                [depositReceiptAddress] = PublicKey.findProgramAddressSync(
-                    [
-                        Buffer.from('deposit_receipt'),
-                        JITO_STAKE_POOL_ADDRESS.toBuffer(),
-                        baseKeypair.publicKey.toBuffer(),
-                    ],
-                    STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID
-                );
+            const baseKeypair = depositSigners?.[0];
+            if (!baseKeypair) {
+                throw new Error('No deposit signers available');
             }
+
+            const [depositReceiptAddress] = PublicKey.findProgramAddressSync(
+                [
+                    Buffer.from('deposit_receipt'),
+                    JITO_STAKE_POOL_ADDRESS.toBuffer(),
+                    baseKeypair.publicKey.toBuffer(),
+                ],
+                STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID
+            );
 
             // Create transaction
             const transaction = new Transaction();
@@ -130,15 +126,11 @@ export const useAssistedStakeDeposit = () => {
             });
 
             console.log('Stake deposit transaction successful:', signature);
-            if (depositReceiptAddress) {
-                console.log('Deposit receipt address:', depositReceiptAddress.toString());
-            }
+            console.log('Deposit receipt address:', depositReceiptAddress.toString());
 
-            const successMessage = depositReceiptAddress
-                ? `Stake successfully deposited to Jito interceptor! Stake will be automatically added to pool in ~10 hours. To view status of your intercepted stake, visit https://www.jito.network/interceptor/\n\nDeposit Receipt: ${depositReceiptAddress.toString()}\n\nTx: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`
-                : `Successfully deposited stake to JitoSOL! View: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`;
-
-            toast.success(successMessage, {
+            toast.success(
+                `Stake successfully deposited to Jito interceptor! Stake will be automatically added to pool in ~10 hours. To view status of your intercepted stake, visit https://www.jito.network/interceptor/\n\nDeposit Receipt: ${depositReceiptAddress.toString()}\n\nTx: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
+                {
                 id: toastId,
                 duration: 15000,
                 style: {

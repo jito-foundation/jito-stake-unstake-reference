@@ -16,6 +16,7 @@ import {
     JITO_STAKE_POOL_ADDRESS,
     STAKE_POOL_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
+    STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID,
 } from '../constants';
 import { useState } from 'react';
 import { getStakePoolAccount } from '@solana/spl-stake-pool';
@@ -26,11 +27,6 @@ import {
 } from '@solana/spl-token';
 import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-
-// Stake Deposit Interceptor Program ID
-const STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID = new PublicKey(
-    '5TAiuAh3YGDbwjEruC1ZpXTJWdNDS7Ur7VeqNNiHMmGV'
-);
 
 /**
  * Hook for manually depositing stake accounts to the Jito stake pool.

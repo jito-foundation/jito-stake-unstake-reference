@@ -12,6 +12,9 @@ export const JITO_MINT_ADDRESS = new PublicKey(JITOSOL_MINT_ADDRESS_STRING);
 // Stake Pool Program ID
 export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy');
 
+// Stake Deposit Interceptor Program ID
+export const STAKE_DEPOSIT_INTERCEPTOR_PROGRAM_ID = new PublicKey('5TAiuAh3YGDbwjEruC1ZpXTJWdNDS7Ur7VeqNNiHMmGV');
+
 // Token Program ID
 export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
