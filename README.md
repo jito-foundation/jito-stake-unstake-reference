@@ -7,6 +7,8 @@ This is a reference UI implementation for staking SOL to the Jito stake pool to 
 This reference implementation demonstrates how to build a user interface for interacting with the Jito stake pool, showing:
 
 1.  **Stake SOL to receive JitoSOL** (Assisted & Manual)
+    *   **SOL Deposit:** Direct SOL deposit into the stake pool
+    *   **Stake Account Deposit:** Creating a stake account and depositing it via the stake-deposit-interceptor
 2.  **Unstake JitoSOL to receive SOL** (Assisted & Manual)
     *   **Assisted Unstake**
         *   Initiating a **withdraw** into a stake account.
@@ -43,6 +45,8 @@ By offering both **Assisted** (library) and **Manual** (direct) methods for stak
     
     **Note:** This project uses a frozen lockfile (`.yarnrc`) to ensure deterministic, secure dependency installation and prevent unexpected package updates.
 
+    Note: The `@jito-foundation/stake-deposit-interceptor-sdk` package is installed from npm.
+
 3.  (Optional) Set up environment variables:
     Create a `.env.local` file in the root directory. You can specify a custom Mainnet RPC endpoint if needed:
     ```
@@ -76,8 +80,11 @@ By offering both **Assisted** (library) and **Manual** (direct) methods for stak
 These hooks encapsulate the core logic for interacting with the stake pool. The `Manual` hooks are particularly useful for understanding how the underlying Solana transactions and instructions are constructed, providing a clear basis for further customization.
 
 *   **`useStakePoolInfo.ts`**: Fetches and processes data about the Jito stake pool.
-*   **`useAssistedStake.ts`**: Implements staking using the `@solana/spl-stake-pool` library (`depositSol`).
-*   **`useManualStake.ts`**: Implements staking by manually constructing the `DepositSol` transaction instruction. Demonstrates the steps involved in creating the instruction, handling accounts (like the associated token account), and sending the transaction. Ideal for learning or customizing the staking process.
+*   **`useAssistedSolDeposit.ts`**: Implements SOL deposit using the `@solana/spl-stake-pool` library (`depositSol`). Directly deposits SOL into the stake pool in exchange for JitoSOL.
+*   **`useManualSolDeposit.ts`**: Implements SOL deposit by manually constructing the `DepositSol` transaction instruction. Demonstrates the steps involved in creating the instruction, handling accounts (like the associated token account), and sending the transaction. Ideal for learning or customizing the SOL deposit process.
+*   **`useCreateStakeAccount.ts`**: Creates an active stake account by depositing SOL and immediately withdrawing it as a stake account in a single transaction. Manually constructs both `DepositSol` and `WithdrawStake` instructions to provide an already-active stake account for the interceptor deposit flow.
+*   **`useAssistedStakeDeposit.ts`**: Implements stake account deposit using the `@jito-foundation/stake-deposit-interceptor-sdk` library. Accepts an existing delegated stake account and deposits it via the interceptor wrapper program.
+*   **`useManualStakeDeposit.ts`**: Implements stake account deposit by manually constructing the transaction with the stake-deposit-interceptor program. Accepts an existing delegated stake account, authorizes it, and builds the `DepositStake` instruction manually. Provides full control over the deposit process.
 *   **`useAssistedUnstake.ts`**: Implements unstaking using the `@solana/spl-stake-pool` library (`withdrawSol` or `withdrawStake`), handling reserve and delayed options.
 *   **`useManualUnstake.ts`**: Implements unstaking by manually constructing the `WithdrawStake` transaction instruction, creating a new stake account for the user. Shows how to find validator stake accounts, manage temporary accounts, build the instruction manually, and handle necessary signers. Serves as a detailed example for custom unstaking flows. *Note: This hook replicates some helper functions from the SPL library for instruction creation.*.
 
@@ -102,12 +109,53 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 ### Staking
 
-#### Assisted Method
-* Uses `depositSol` from `@solana/spl-stake-pool`
+---
 
-#### Manual Method
+#### SOL Deposit Methods
+
+##### Assisted Method
+* Uses `depositSol` from `@solana/spl-stake-pool`
+* Directly deposits SOL into the stake pool
+
+##### Manual Method
 * Manually creates the `DepositSol` instruction
 * Includes finding/creating the associated token account for JitoSOL
+* Demonstrates low-level transaction construction
+
+---
+
+#### Stake Account Deposit Methods
+
+**Important:** Stake account deposits use a **two-step process**:
+
+**Step 1: Create Active Stake Account** (using `useCreateStakeAccount`)
+* Deposits SOL to the pool and immediately withdraws it as a stake account in a single transaction
+* Manually constructs both `DepositSol` and `WithdrawStake` instructions in one transaction
+* The transaction mints JitoSOL and immediately burns it to receive an already-active stake account
+* No validator selection needed - the pool automatically assigns a validator
+* Returns the stake account address for use in Step 2
+
+**Step 2: Deposit Stake Account to Pool**
+
+##### Assisted Method
+* Uses `depositStake` from `@jito-foundation/stake-deposit-interceptor-sdk`
+* Accepts an existing delegated stake account address
+* Automatically detects the validator the stake is delegated to by reading the stake account data
+* Authorizes and deposits the stake account via the interceptor wrapper program
+* The interceptor program manages the authorization and deposit process, creating a deposit receipt that can later be used to claim pool tokens
+
+##### Manual Method
+* Manually constructs all instructions for stake account deposit
+* Accepts an existing delegated stake account address
+* Automatically detects the validator the stake is delegated to by parsing the stake account data
+* Authorizes the stake-deposit authority as both staker and withdrawer
+* Manually builds the `DepositStake` instruction for the interceptor program
+* Demonstrates the complete low-level flow including PDA derivations and account setup
+* Shows how JitoSOL uniquely requires the stake-deposit-interceptor wrapper program for stake deposits
+
+**Note:** In production use cases, users typically already have delegated stake accounts and would skip Step 1, going directly to Step 2 with their existing stake account addresses.
+
+---
 
 ### Unstaking
 
@@ -135,13 +183,17 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 ## Important Considerations
 
 1.  **Account Rent & Fees:** Transactions require SOL for network fees and potentially rent-exemption for new accounts.
-3.  **Stake Account Deactivation:** Funds withdrawn as stake accounts (via Assisted `useReserve=false` or Manual) are only fully liquid after the stake account deactivates (typically 1-2 epochs).
-4.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs fees defined by the stake pool.
-5.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior differ between networks.
+2.  **Stake Deposit Interceptor:** JitoSOL requires using the stake-deposit-interceptor wrapper program (program ID: `5TAiuAh3YGDbwjEruC1ZpXTJWdNDS7Ur7VeqNNiHMmGV`) for depositing stake accounts. This program manages the authorization and deposit process, creating a deposit receipt that can later be used to claim pool tokens.
+3.  **Stake Account Deposits - Two-Step Process:** This implementation uses a two-step process. Step 1 creates an active stake account by depositing SOL and immediately withdrawing it as a stake account (all in one transaction). Step 2 deposits that stake account to the pool via the interceptor. In production, users typically already have delegated stake accounts and would skip Step 1, using the deposit methods directly with their existing stake account addresses.
+4.  **Stake Account Deactivation:** Funds withdrawn as stake accounts (via Assisted `useReserve=false` or Manual) are only fully liquid after the stake account deactivates (typically 1-2 epochs).
+5.  **Reserve Withdrawal:** Using the reserve (`useReserve=true`) is subject to available liquidity and incurs fees defined by the stake pool.
+6.  **Validator Selection:** When creating stake accounts (Step 1), the pool automatically assigns a validator during the withdraw process. When depositing (Step 2), the validator is automatically detected from the stake account data - no manual selection needed.
+7.  **Testnet vs Mainnet:** Pool parameters, minimum balances, and behavior differ between networks.
 
 ## References
 
 *   [Jito Network](https://www.jito.network/)
+*   [Jito Stake Deposit Interceptor](https://github.com/exo-tech-xyz/stake-deposit-interceptor) - Wrapper program for depositing stake accounts to JitoSOL
 *   [Solana SPL Stake Pool Library](https://spl.solana.com/stake-pool)
 *   [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter)
 *   [Solana Web3.js Documentation](https://solana-labs.github.io/solana-web3.js/)

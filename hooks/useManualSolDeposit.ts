@@ -21,13 +21,13 @@ import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /**
- * Hook for manually staking SOL to the Jito stake pool (without using SPL stake pool library functions)
+ * Hook for manually depositing SOL to the Jito stake pool (without using SPL stake pool library functions)
  * Note: This implementation uses the wallet directly as the funding account,
  * unlike the standard SPL stake pool library which creates an ephemeral account
  * and transfers SOL to it first. Both approaches work - we chose the direct
  * method for simplicity.
  */
-export const useManualStake = () => {
+export const useManualSolDeposit = () => {
     const { connection } = useConnection();
     const wallet = useWallet();
     const [isLoading, setIsLoading] = useState(false);
@@ -35,10 +35,10 @@ export const useManualStake = () => {
     const { network } = useNetwork();
 
     /**
-     * Manually creates and sends a transaction to stake SOL
-     * @param amount - Amount of SOL to stake (in SOL, not lamports)
+     * Manually creates and sends a transaction to deposit SOL
+     * @param amount - Amount of SOL to deposit (in SOL, not lamports)
      */
-    const stake = async (amount: number): Promise<boolean> => {
+    const depositSol = async (amount: number): Promise<boolean> => {
         if (!wallet.publicKey || !wallet.signTransaction) {
             toast.error('Wallet not connected');
             return false;
@@ -47,13 +47,13 @@ export const useManualStake = () => {
         setIsLoading(true);
         setTxSignature(null);
 
-        const toastId = toast.loading('Preparing staking transaction...');
+        const toastId = toast.loading('Preparing SOL deposit transaction...');
 
         try {
-            console.log(`Staking ${amount} SOL using manual method...`);
+            console.log(`Depositing ${amount} SOL using manual method...`);
 
             // Convert SOL to lamports
-            const lamportsToStake = Math.floor(amount * LAMPORTS_PER_SOL);
+            const lamportsToDeposit = Math.floor(amount * LAMPORTS_PER_SOL);
 
             // Get stake pool data to extract addresses
             const stakePoolAccount = await getStakePoolAccount(
@@ -96,7 +96,7 @@ export const useManualStake = () => {
                     // Create a buffer for the instruction data
                     const dataLayout = Buffer.alloc(9); // 1 byte for instruction index + 8 bytes for lamports
                     dataLayout.writeUInt8(14, 0); // Instruction index 14 for DepositSol
-                    dataLayout.writeBigInt64LE(BigInt(lamportsToStake), 1); // Write lamports as a 64-bit integer
+                    dataLayout.writeBigInt64LE(BigInt(lamportsToDeposit), 1); // Write lamports as a 64-bit integer
                     return dataLayout;
                 })()
 
@@ -138,9 +138,9 @@ export const useManualStake = () => {
                 lastValidBlockHeight,
             });
 
-            console.log('Manual stake transaction successful:', signature);
+            console.log('Manual SOL deposit transaction successful:', signature);
             toast.success(
-              `Successfully staked SOL to JitoSOL! View: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
+              `Successfully deposited SOL to JitoSOL! View: https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
               {
                 id: toastId,
                 duration: 8000,
@@ -152,9 +152,9 @@ export const useManualStake = () => {
             );
             return true;
         } catch (e: any) {
-            console.error('Staking error:', e);
+            console.error('SOL deposit error:', e);
             toast.dismiss(toastId);
-            toast.error('Staking failed. Please try again.');
+            toast.error('SOL deposit failed. Please try again.');
             return false;
         } finally {
             // Always reset loading state
@@ -163,7 +163,7 @@ export const useManualStake = () => {
     };
 
     return {
-        stake,
+        depositSol,
         isLoading,
         txSignature,
     };

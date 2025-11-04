@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import Button from './Button';
 import { useAssistedUnstake, UnstakeParams } from '../hooks/useAssistedUnstake';
@@ -20,7 +20,7 @@ const WalletMultiButton = dynamic(
 
 const UnstakeTab: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
-  const [unstakeMethod, setUnstakeMethod] = useState<StakeMethod>(StakeMethod.ASSISTED);
+  const [unstakeMethod, setUnstakeMethod] = useState<StakeMethod>(StakeMethod.ASSISTED_UNSTAKE);
   const [useReserve, setUseReserve] = useState<boolean>(false);
   const [voteAccountAddress, setVoteAccountAddress] = useState<string>('');
   const [stakeReceiver, setStakeReceiver] = useState<string>('');
@@ -33,22 +33,22 @@ const UnstakeTab: React.FC = () => {
   const manualUnstake = useManualUnstake();
 
   // Get wallet JitoSOL balance
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     if (wallet.publicKey) {
       try {
         const userPoolTokenAccount = getAssociatedTokenAddressSync(
           JITO_MINT_ADDRESS,
           wallet.publicKey
         );
-        
+
         // Check if the account exists
         const accountInfo = await connection.getAccountInfo(userPoolTokenAccount);
-        
+
         if (!accountInfo) {
           setJitoSolBalance(0);
           return;
         }
-        
+
         // Get token account data
         const tokenAccountInfo = await connection.getTokenAccountBalance(userPoolTokenAccount);
         const balance = tokenAccountInfo.value.uiAmount || 0;
@@ -59,16 +59,16 @@ const UnstakeTab: React.FC = () => {
         setJitoSolBalance(0);
       }
     }
-  };
+  }, [wallet.publicKey, connection]);
 
   // Fetch balance when wallet connects
   useEffect(() => {
-    if (wallet?.publicKey && connection?.rpcEndpoint) {
+    if (wallet?.publicKey) {
       fetchBalance();
     } else {
       setJitoSolBalance(null);
     }
-  }, [wallet?.publicKey, connection?.rpcEndpoint]);
+  }, [wallet?.publicKey, fetchBalance]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +81,7 @@ const UnstakeTab: React.FC = () => {
     let success = false;
     
     try {
-      if (unstakeMethod === StakeMethod.ASSISTED) {
+      if (unstakeMethod === StakeMethod.ASSISTED_UNSTAKE) {
         // Prepare additional parameters for assisted unstake
         const params: UnstakeParams = {
           useReserve: useReserve
@@ -170,34 +170,34 @@ const UnstakeTab: React.FC = () => {
               <button
                 type="button"
                 className={`py-2 px-4 rounded-md ${
-                  unstakeMethod === StakeMethod.ASSISTED
+                  unstakeMethod === StakeMethod.ASSISTED_UNSTAKE
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-200 text-gray-800'
                 }`}
-                onClick={() => setUnstakeMethod(StakeMethod.ASSISTED)}
+                onClick={() => setUnstakeMethod(StakeMethod.ASSISTED_UNSTAKE)}
               >
                 Assisted
               </button>
               <button
                 type="button"
                 className={`py-2 px-4 rounded-md ${
-                  unstakeMethod === StakeMethod.MANUAL
+                  unstakeMethod === StakeMethod.MANUAL_UNSTAKE
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-200 text-gray-800'
                 }`}
-                onClick={() => setUnstakeMethod(StakeMethod.MANUAL)}
+                onClick={() => setUnstakeMethod(StakeMethod.MANUAL_UNSTAKE)}
               >
                 Manual
               </button>
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              {unstakeMethod === StakeMethod.ASSISTED
+              {unstakeMethod === StakeMethod.ASSISTED_UNSTAKE
                 ? 'Assisted unstaking uses the SPL stake pool library.'
                 : 'Manual unstaking constructs the transactions manually.'}
             </p>
           </div>
 
-          {unstakeMethod === StakeMethod.ASSISTED && (
+          {unstakeMethod === StakeMethod.ASSISTED_UNSTAKE && (
             <div className="mb-6">
               <div className="flex items-center">
                 <input
@@ -220,7 +220,7 @@ const UnstakeTab: React.FC = () => {
           )}
           
           {/* Advanced options for assisted unstaking without reserve */}
-          {unstakeMethod === StakeMethod.ASSISTED && !useReserve && (
+          {unstakeMethod === StakeMethod.ASSISTED_UNSTAKE && !useReserve && (
             <div className="mb-6">
               <button
                 type="button"
