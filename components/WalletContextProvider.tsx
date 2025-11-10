@@ -15,18 +15,18 @@ interface WalletContextProviderProps {
 
 export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children }) => {
   const { network } = useNetwork();
-  
+
   // Determine the RPC endpoint based on the selected network
   const endpoint = useMemo(() => {
     switch (network) {
       case WalletAdapterNetwork.Mainnet:
         // Use custom RPC URL from environment variable for Mainnet if available
         return process.env.NEXT_PUBLIC_RPC_URL || clusterApiUrl(WalletAdapterNetwork.Mainnet);
-      
+
       case WalletAdapterNetwork.Testnet:
         // Always use the standard public RPC for Testnet
         return clusterApiUrl(WalletAdapterNetwork.Testnet);
-        
+
       default:
         // For any other networks, use the appropriate public RPC endpoint
         return clusterApiUrl(network);

@@ -3,6 +3,7 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import Button from './Button';
 import { useAssistedUnstake, UnstakeParams } from '../hooks/useAssistedUnstake';
 import { useManualUnstake } from '../hooks/useManualUnstake';
+import { useManualUnstakeFromPreferredValidator } from '../hooks/useManualUnstakeFromPreferredValidator';
 import { StakeMethod } from '../constants';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { JITO_MINT_ADDRESS } from '../constants';
@@ -25,12 +26,14 @@ const UnstakeTab: React.FC = () => {
   const [voteAccountAddress, setVoteAccountAddress] = useState<string>('');
   const [stakeReceiver, setStakeReceiver] = useState<string>('');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(true);
+  const [usePreferredValidators, setUsePreferredValidators] = useState<boolean>(false);
   
   const wallet = useWallet();
   const { connection } = useConnection();
   const [jitoSolBalance, setJitoSolBalance] = useState<number | null>(null);
   const assistedUnstake = useAssistedUnstake();
   const manualUnstake = useManualUnstake();
+  const manualUnstakeFromPreferred = useManualUnstakeFromPreferredValidator();
 
   // Get wallet JitoSOL balance
   const fetchBalance = useCallback(async () => {
@@ -110,7 +113,12 @@ const UnstakeTab: React.FC = () => {
         // amount value is in JitoSOL -- not decimal adjusted
         success = await assistedUnstake.unstake(amountValue, params);
       } else {
-        success = await manualUnstake.unstake(amountValue);
+        // Manual unstake - use either standard or preferred validators
+        if (usePreferredValidators) {
+          success = await manualUnstakeFromPreferred.unstake(amountValue);
+        } else {
+          success = await manualUnstake.unstake(amountValue);
+        }
       }
       
       if (success) {
@@ -197,6 +205,48 @@ const UnstakeTab: React.FC = () => {
             </p>
           </div>
 
+          {/* Validator selection method for manual unstaking */}
+          {unstakeMethod === StakeMethod.MANUAL_UNSTAKE && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Validator Selection Method
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="validatorSelection"
+                    value="standard"
+                    checked={!usePreferredValidators}
+                    onChange={() => setUsePreferredValidators(false)}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Standard (iterate through all validators)
+                  </span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="validatorSelection"
+                    value="preferred"
+                    checked={usePreferredValidators}
+                    onChange={() => setUsePreferredValidators(true)}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Use Preferred Validators (optimized API)
+                  </span>
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                {usePreferredValidators
+                  ? 'Uses an API to select optimal validators for faster processing.'
+                  : 'Iterates through all validators to find one with sufficient balance.'}
+              </p>
+            </div>
+          )}
+
           {unstakeMethod === StakeMethod.ASSISTED_UNSTAKE && (
             <div className="mb-6">
               <div className="flex items-center">
@@ -275,12 +325,13 @@ const UnstakeTab: React.FC = () => {
             label="Unstake JitoSOL"
             width="full"
             onClick={handleSubmit}
-            loading={assistedUnstake.isLoading || manualUnstake.isLoading}
+            loading={assistedUnstake.isLoading || manualUnstake.isLoading || manualUnstakeFromPreferred.isLoading}
             disabled={
-              !amount || 
-              parseFloat(amount) <= 0 || 
-              assistedUnstake.isLoading || 
-              manualUnstake.isLoading
+              !amount ||
+              parseFloat(amount) <= 0 ||
+              assistedUnstake.isLoading ||
+              manualUnstake.isLoading ||
+              manualUnstakeFromPreferred.isLoading
             }
           />
         </>

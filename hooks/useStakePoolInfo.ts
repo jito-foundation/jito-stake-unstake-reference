@@ -46,13 +46,14 @@ export const useStakePoolInfo = () => {
       setPoolInfo(null); // Reset pool info on new fetch
 
       if (!connection) {
-          setError("Wallet not connected");
-          setIsLoading(false);
-          return;
+        setError("Wallet not connected");
+        setIsLoading(false);
+        return;
       }
 
       try {
         // Get stake pool data
+        console.log(connection);
         const stakePoolAccount = await solanaStakePool.getStakePoolAccount(
           connection as any,
           JITO_STAKE_POOL_ADDRESS
