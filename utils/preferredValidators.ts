@@ -1,4 +1,4 @@
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
 /**
  * Interface for the preferred validator API response
@@ -19,27 +19,25 @@ export interface PreferredWithdraw {
  * @param network - The current wallet adapter network
  * @returns The API URL to use for fetching preferred validators
  */
-export const getPreferredValidatorsApiUrl = (
-  network: WalletAdapterNetwork,
-): string => {
+export const getPreferredValidatorsApiUrl = (network: WalletAdapterNetwork): string => {
   // Check if env var is defined (for local development)
   const envApiUrl = process.env.NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL;
   if (envApiUrl) {
-    console.log("Using API URL from environment:", envApiUrl);
+    console.log('Using API URL from environment:', envApiUrl);
     return envApiUrl;
   }
 
   // Fallback to Kobe API based on network
-  const apiPath = "/api/v1/preferred_withdraw_validator_list";
+  const apiPath = '/api/v1/preferred_withdraw_validator_list';
   let baseUrl: string;
 
   switch (network) {
     case WalletAdapterNetwork.Testnet:
-      baseUrl = "https://kobe.testnet.jito.network";
+      baseUrl = 'https://kobe.testnet.jito.network';
       break;
     case WalletAdapterNetwork.Mainnet:
     default:
-      baseUrl = "https://kobe.mainnet.jito.network";
+      baseUrl = 'https://kobe.mainnet.jito.network';
       break;
   }
 

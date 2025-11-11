@@ -108,19 +108,13 @@ Defines key addresses and values:
 
 ```typescript
 // Jito Stake Pool Address (Mainnet-beta)
-export const JITO_STAKE_POOL_ADDRESS = new PublicKey(
-  "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb",
-);
+export const JITO_STAKE_POOL_ADDRESS = new PublicKey('Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb');
 
 // Jito SOL Mint Address (JitoSOL)
-export const JITO_MINT_ADDRESS = new PublicKey(
-  "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
-);
+export const JITO_MINT_ADDRESS = new PublicKey('J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn');
 
 // Stake Pool Program ID
-export const STAKE_POOL_PROGRAM_ID = new PublicKey(
-  "SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy",
-);
+export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy');
 
 // Other constants like LAMPORTS_PER_SOL...
 ```

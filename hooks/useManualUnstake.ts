@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useMemo, useState } from 'react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
   Transaction,
   LAMPORTS_PER_SOL,
@@ -10,26 +10,15 @@ import {
   SystemProgram,
   TransactionInstruction,
   SYSVAR_CLOCK_PUBKEY,
-} from "@solana/web3.js";
-import {
-  JITO_MINT_ADDRESS,
-  JITO_STAKE_POOL_ADDRESS,
-  STAKE_POOL_PROGRAM_ID,
-} from "../constants";
-import { getStakePoolAccount } from "@solana/spl-stake-pool";
-import {
-  getAssociatedTokenAddressSync,
-  getAccount,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import toast from "react-hot-toast";
-import { useNetwork } from "../components/NetworkProvider";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import {
-  PreferredWithdraw,
-  getPreferredValidatorsApiUrl,
-} from "../utils/preferredValidators";
-import { createApproveInstruction } from "../utils/spl-token";
+} from '@solana/web3.js';
+import { JITO_MINT_ADDRESS, JITO_STAKE_POOL_ADDRESS, STAKE_POOL_PROGRAM_ID } from '../constants';
+import { getStakePoolAccount } from '@solana/spl-stake-pool';
+import { getAssociatedTokenAddressSync, getAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import toast from 'react-hot-toast';
+import { useNetwork } from '../components/NetworkProvider';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { PreferredWithdraw, getPreferredValidatorsApiUrl } from '../utils/preferredValidators';
+import { createApproveInstruction } from '../utils/spl-token';
 
 /**
  * Hook for manually unstaking JitoSOL into a stake account using preferred validators from API.
@@ -50,7 +39,7 @@ export const useManualUnstake = () => {
    */
   const unstake = async (amount: number): Promise<boolean> => {
     if (!wallet.publicKey || !wallet.signTransaction) {
-      toast.error("Wallet not connected");
+      toast.error('Wallet not connected');
       return false;
     }
 
@@ -60,42 +49,31 @@ export const useManualUnstake = () => {
     const loadingToastId = toast.loading(`Preparing unstake transaction...`);
 
     try {
-      console.log(
-        `Manually unstaking ${amount} JitoSOL using preferred validators`,
-      );
+      console.log(`Manually unstaking ${amount} JitoSOL using preferred validators`);
 
       const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
       if (lamports <= 0) {
-        throw new Error("Invalid amount specified");
+        throw new Error('Invalid amount specified');
       }
 
-      const stakePoolAccount = await getStakePoolAccount(
-        connection as any,
-        JITO_STAKE_POOL_ADDRESS,
-      );
+      const stakePoolAccount = await getStakePoolAccount(connection as any, JITO_STAKE_POOL_ADDRESS);
       if (!stakePoolAccount) {
-        throw new Error("Failed to get stake pool account data");
+        throw new Error('Failed to get stake pool account data');
       }
 
       const [withdrawAuthority] = PublicKey.findProgramAddressSync(
-        [JITO_STAKE_POOL_ADDRESS.toBuffer(), Buffer.from("withdraw")],
-        STAKE_POOL_PROGRAM_ID,
+        [JITO_STAKE_POOL_ADDRESS.toBuffer(), Buffer.from('withdraw')],
+        STAKE_POOL_PROGRAM_ID
       );
 
-      const userPoolTokenAccount = getAssociatedTokenAddressSync(
-        JITO_MINT_ADDRESS,
-        wallet.publicKey,
-      );
-      const poolTokenAccountInfo = await getAccount(
-        connection,
-        userPoolTokenAccount,
-      ).catch(() => null);
+      const userPoolTokenAccount = getAssociatedTokenAddressSync(JITO_MINT_ADDRESS, wallet.publicKey);
+      const poolTokenAccountInfo = await getAccount(connection, userPoolTokenAccount).catch(() => null);
       if (!poolTokenAccountInfo) {
-        throw new Error("Could not find JitoSOL token account");
+        throw new Error('Could not find JitoSOL token account');
       }
       if (poolTokenAccountInfo.amount < BigInt(lamports)) {
         throw new Error(
-          `Insufficient JitoSOL balance. You have ${Number(poolTokenAccountInfo.amount) / LAMPORTS_PER_SOL} JitoSOL but trying to unstake ${amount} JitoSOL`,
+          `Insufficient JitoSOL balance. You have ${Number(poolTokenAccountInfo.amount) / LAMPORTS_PER_SOL} JitoSOL but trying to unstake ${amount} JitoSOL`
         );
       }
 
@@ -111,12 +89,7 @@ export const useManualUnstake = () => {
       signers.push(transferAuthority);
 
       transaction.add(
-        createApproveInstruction(
-          userPoolTokenAccount,
-          transferAuthority.publicKey,
-          wallet.publicKey,
-          lamports,
-        ),
+        createApproveInstruction(userPoolTokenAccount, transferAuthority.publicKey, wallet.publicKey, lamports)
       );
 
       // --- Logic for withdrawing as stake account using Preferred Validator API ---
@@ -131,48 +104,37 @@ export const useManualUnstake = () => {
 
       try {
         const response = await fetch(apiUrl, {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         });
 
         if (!response.ok) {
-          throw new Error(
-            `API returned error status: ${response.status} ${response.statusText}`,
-          );
+          throw new Error(`API returned error status: ${response.status} ${response.statusText}`);
         }
 
         preferredValidators = await response.json();
 
-        if (
-          !Array.isArray(preferredValidators) ||
-          preferredValidators.length === 0
-        ) {
-          throw new Error("No preferred validators returned from API");
+        if (!Array.isArray(preferredValidators) || preferredValidators.length === 0) {
+          throw new Error('No preferred validators returned from API');
         }
 
-        console.log(
-          `Received ${preferredValidators.length} preferred validators from API`,
-        );
+        console.log(`Received ${preferredValidators.length} preferred validators from API`);
       } catch (apiError) {
-        console.error("Failed to fetch preferred validators:", apiError);
+        console.error('Failed to fetch preferred validators:', apiError);
         throw new Error(
-          `Failed to fetch preferred validators: ${apiError instanceof Error ? apiError.message : "Unknown error"}`,
+          `Failed to fetch preferred validators: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`
         );
       }
 
       // Try to find a validator with enough withdrawable lamports
-      const selectedValidator = preferredValidators.find(
-        (v) => v.withdrawable_lamports >= lamports,
-      );
+      const selectedValidator = preferredValidators.find((v) => v.withdrawable_lamports >= lamports);
       if (selectedValidator) {
-        console.log(
-          `Using preferred validator with rank ${selectedValidator.rank}`,
-        );
+        console.log(`Using preferred validator with rank ${selectedValidator.rank}`);
       } else {
         throw new Error(
-          `No validator has sufficient withdrawable balance. Requested: ${lamports} lamports, Max available: ${Math.max(...preferredValidators.map((v) => v.withdrawable_lamports))} lamports`,
+          `No validator has sufficient withdrawable balance. Requested: ${lamports} lamports, Max available: ${Math.max(...preferredValidators.map((v) => v.withdrawable_lamports))} lamports`
         );
       }
 
@@ -180,30 +142,19 @@ export const useManualUnstake = () => {
       let selectedValidatorStakeAddress: PublicKey;
 
       try {
-        selectedValidatorStakeAddress = new PublicKey(
-          selectedValidator.stake_account,
-        );
+        selectedValidatorStakeAddress = new PublicKey(selectedValidator.stake_account);
       } catch (e) {
-        throw new Error(
-          `Invalid public key in API response: ${e instanceof Error ? e.message : "Unknown error"}`,
-        );
+        throw new Error(`Invalid public key in API response: ${e instanceof Error ? e.message : 'Unknown error'}`);
       }
 
-      console.log(
-        `Using API-selected validator (rank ${selectedValidator.rank}):`,
-      );
-      console.log(
-        `  Stake account: ${selectedValidatorStakeAddress.toBase58()}`,
-      );
-      console.log(
-        `  Withdrawable lamports: ${selectedValidator.withdrawable_lamports}`,
-      );
+      console.log(`Using API-selected validator (rank ${selectedValidator.rank}):`);
+      console.log(`  Stake account: ${selectedValidatorStakeAddress.toBase58()}`);
+      console.log(`  Withdrawable lamports: ${selectedValidator.withdrawable_lamports}`);
 
       // Create temporary stake account to receive funds
       const tempStakeAccount = Keypair.generate();
       signers.push(tempStakeAccount);
-      const stakeRentExempt =
-        await connection.getMinimumBalanceForRentExemption(StakeProgram.space);
+      const stakeRentExempt = await connection.getMinimumBalanceForRentExemption(StakeProgram.space);
 
       // 1. Create temporary stake account
       transaction.add(
@@ -213,7 +164,7 @@ export const useManualUnstake = () => {
           lamports: stakeRentExempt,
           space: StakeProgram.space,
           programId: StakeProgram.programId,
-        }),
+        })
       );
 
       // 2. Withdraw Stake instruction (destination is the temporary account)
@@ -279,8 +230,7 @@ export const useManualUnstake = () => {
       // --- End of withdraw as stake logic ---
 
       // Transaction finalization
-      const { blockhash, lastValidBlockHeight } =
-        await connection.getLatestBlockhash("finalized");
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = wallet.publicKey;
 
@@ -292,41 +242,33 @@ export const useManualUnstake = () => {
       const signedTransaction = await wallet.signTransaction(transaction);
 
       toast.loading(`Sending transaction...`, { id: loadingToastId });
-      const signature = await connection.sendRawTransaction(
-        signedTransaction.serialize(),
-      );
+      const signature = await connection.sendRawTransaction(signedTransaction.serialize());
       setTxSignature(signature);
 
       toast.loading(`Confirming transaction... ${signature.substring(0, 8)}`, {
         id: loadingToastId,
       });
-      await connection.confirmTransaction(
-        { signature, blockhash, lastValidBlockHeight },
-        "confirmed",
-      );
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
 
-      console.log(
-        "Manual unstake (preferred validator) transaction successful:",
-        signature,
-      );
+      console.log('Manual unstake (preferred validator) transaction successful:', signature);
       toast.dismiss(loadingToastId);
 
       // Main confirmation toast with link
       toast.success(
-        `Transaction Confirmed! View: <br />https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? "?cluster=testnet" : ""}`,
+        `Transaction Confirmed! View: <br />https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`,
         {
           duration: 8000,
           style: {
-            overflowWrap: "break-word",
-            wordBreak: "break-word",
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
           },
-        },
+        }
       );
 
       return true;
     } catch (err: any) {
-      console.error("Error in manual unstake (preferred validator):", err);
-      const message = err.message || "Unstaking failed. Please try again.";
+      console.error('Error in manual unstake (preferred validator):', err);
+      const message = err.message || 'Unstaking failed. Please try again.';
       toast.dismiss(loadingToastId);
       toast.error(message);
       return false;

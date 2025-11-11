@@ -1,24 +1,18 @@
-import { useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useState } from 'react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
   TransactionMessage,
   VersionedTransaction,
   ComputeBudgetProgram,
   Transaction,
   PublicKey,
-} from "@solana/web3.js";
-import {
-  COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS,
-  JITO_STAKE_POOL_ADDRESS,
-} from "../constants";
-import toast from "react-hot-toast";
-import * as solanaStakePool from "@solana/spl-stake-pool";
-import { useNetwork } from "../components/NetworkProvider";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import {
-  PreferredWithdraw,
-  getPreferredValidatorsApiUrl,
-} from "../utils/preferredValidators";
+} from '@solana/web3.js';
+import { COMPUTE_UNIT_LIMIT_FOR_STAKE_OPERATIONS, JITO_STAKE_POOL_ADDRESS } from '../constants';
+import toast from 'react-hot-toast';
+import * as solanaStakePool from '@solana/spl-stake-pool';
+import { useNetwork } from '../components/NetworkProvider';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { PreferredWithdraw, getPreferredValidatorsApiUrl } from '../utils/preferredValidators';
 
 /**
  * Parameters for unstaking JitoSOL
@@ -45,33 +39,27 @@ export const useAssistedUnstake = () => {
    * @param {UnstakeParams} params - Optional parameters for unstaking
    * @returns {Promise<boolean>} - Whether the unstake was successful
    */
-  const unstake = async (
-    amount: number,
-    params?: UnstakeParams,
-  ): Promise<boolean> => {
+  const unstake = async (amount: number, params?: UnstakeParams): Promise<boolean> => {
     // Set default parameters if not provided
     const unstakeParams: UnstakeParams = params || { useReserve: true };
 
     // Clear previous state
     setIsLoading(true);
     setTxSignature(null);
-    const toastId = toast.loading("Preparing unstaking transaction...");
+    const toastId = toast.loading('Preparing unstaking transaction...');
 
-    const stakePoolAccount = await solanaStakePool.getStakePoolAccount(
-      connection as any,
-      JITO_STAKE_POOL_ADDRESS,
-    );
+    const stakePoolAccount = await solanaStakePool.getStakePoolAccount(connection as any, JITO_STAKE_POOL_ADDRESS);
 
     try {
       // Check if wallet is connected
       if (!wallet.publicKey || !wallet.signTransaction) {
-        toast.error("Please connect your wallet to unstake", { id: toastId });
+        toast.error('Please connect your wallet to unstake', { id: toastId });
         return false;
       }
 
       // Ensure stake pool is loaded properly
       if (!stakePoolAccount) {
-        toast.error("Failed to load stake pool information", { id: toastId });
+        toast.error('Failed to load stake pool information', { id: toastId });
         return false;
       }
 
@@ -79,37 +67,28 @@ export const useAssistedUnstake = () => {
       let voteAccountAddress: PublicKey | undefined;
 
       try {
-        toast.loading("Fetching preferred validators...", { id: toastId });
+        toast.loading('Fetching preferred validators...', { id: toastId });
         const apiUrl = getPreferredValidatorsApiUrl(network);
 
         const response = await fetch(apiUrl, {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         });
 
         if (response.ok) {
-          const preferredValidators: PreferredWithdraw[] =
-            await response.json();
+          const preferredValidators: PreferredWithdraw[] = await response.json();
 
-          if (
-            Array.isArray(preferredValidators) &&
-            preferredValidators.length > 0
-          ) {
+          if (Array.isArray(preferredValidators) && preferredValidators.length > 0) {
             // Take the first validator from the list
             const selectedValidator = preferredValidators[0];
             voteAccountAddress = new PublicKey(selectedValidator.vote_account);
-            console.log(
-              `Using preferred validator: ${voteAccountAddress.toBase58()} (rank ${selectedValidator.rank})`,
-            );
+            console.log(`Using preferred validator: ${voteAccountAddress.toBase58()} (rank ${selectedValidator.rank})`);
           }
         }
       } catch (apiError) {
-        console.warn(
-          "Failed to fetch preferred validators, will use default:",
-          apiError,
-        );
+        console.warn('Failed to fetch preferred validators, will use default:', apiError);
         // Continue without preferred validator - SPL library will auto-select
       }
 
@@ -137,8 +116,8 @@ export const useAssistedUnstake = () => {
       }
 
       console.log(
-        "withdrawStakeArgs",
-        withdrawStakeArgs.map((arg) => arg?.toString()),
+        'withdrawStakeArgs',
+        withdrawStakeArgs.map((arg) => arg?.toString())
       );
 
       const {
@@ -146,9 +125,7 @@ export const useAssistedUnstake = () => {
         signers,
         stakeReceiver,
       } = await solanaStakePool.withdrawStake(
-        ...(withdrawStakeArgs as Parameters<
-          typeof solanaStakePool.withdrawStake
-        >),
+        ...(withdrawStakeArgs as Parameters<typeof solanaStakePool.withdrawStake>)
       );
 
       const instructions = [];
@@ -163,7 +140,7 @@ export const useAssistedUnstake = () => {
       const transaction = new Transaction();
       transaction.add(...instructions);
 
-      console.log("stakeReceiver", stakeReceiver?.toString());
+      console.log('stakeReceiver', stakeReceiver?.toString());
       toast.loading(`Processing unstake transaction...`, { id: toastId });
 
       // Create a versioned transaction
@@ -191,10 +168,7 @@ export const useAssistedUnstake = () => {
       const signature = await connection.sendTransaction(signedTransaction);
 
       toast.loading(`Confirming transaction...`, { id: toastId });
-      const confirmation = await connection.confirmTransaction(
-        signature,
-        "confirmed",
-      );
+      const confirmation = await connection.confirmTransaction(signature, 'confirmed');
 
       if (confirmation.value.err) {
         toast.error(`Transaction failed: ${confirmation.value.err}`, {
@@ -206,21 +180,21 @@ export const useAssistedUnstake = () => {
       // Set the transaction signature state
       setTxSignature(signature);
 
-      const solscanLink = `https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? "?cluster=testnet" : ""}`;
+      const solscanLink = `https://solscan.io/tx/${signature}${network === WalletAdapterNetwork.Testnet ? '?cluster=testnet' : ''}`;
       toast.success(`JitoSOL successfully unstaked! View: ${solscanLink}`, {
         id: toastId,
         duration: 8000,
         style: {
-          overflowWrap: "break-word",
-          wordBreak: "break-word",
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
         },
       });
 
       return true;
     } catch (error: any) {
-      console.error("Error in useAssistedUnstake:", error);
+      console.error('Error in useAssistedUnstake:', error);
       toast.dismiss(toastId);
-      toast.error("Unstaking failed. Please try again.");
+      toast.error('Unstaking failed. Please try again.');
       return false;
     } finally {
       setIsLoading(false);
