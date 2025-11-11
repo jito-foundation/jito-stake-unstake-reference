@@ -1,7 +1,12 @@
-import { PublicKey, Signer, TransactionInstruction, AccountMeta } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, TokenInstruction } from '@solana/spl-token';
-import { struct, u8 } from '@solana/buffer-layout';
-import { u64 } from '@solana/buffer-layout-utils';
+import {
+  PublicKey,
+  Signer,
+  TransactionInstruction,
+  AccountMeta,
+} from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID, TokenInstruction } from "@solana/spl-token";
+import { struct, u8 } from "@solana/buffer-layout";
+import { u64 } from "@solana/buffer-layout-utils";
 
 /**
  * Helper to add signers to an instruction
@@ -40,7 +45,10 @@ export interface ApproveInstructionData {
  * Struct for encoding Approve instruction data
  * Copied from @solana/spl-stake-pool package
  */
-export const approveInstructionData = struct<ApproveInstructionData>([u8('instruction'), u64('amount')]);
+export const approveInstructionData = struct<ApproveInstructionData>([
+  u8("instruction"),
+  u64("amount"),
+]);
 
 /**
  * Construct an Approve instruction
