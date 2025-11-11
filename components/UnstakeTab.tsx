@@ -23,7 +23,6 @@ const UnstakeTab: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
   const [unstakeMethod, setUnstakeMethod] = useState<StakeMethod>(StakeMethod.ASSISTED_UNSTAKE);
   const [useReserve, setUseReserve] = useState<boolean>(false);
-  const [voteAccountAddress, setVoteAccountAddress] = useState<string>('');
   const [stakeReceiver, setStakeReceiver] = useState<string>('');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(true);
   const [usePreferredValidators, setUsePreferredValidators] = useState<boolean>(false);
@@ -89,17 +88,7 @@ const UnstakeTab: React.FC = () => {
         const params: UnstakeParams = {
           useReserve: useReserve
         };
-        
-        // Add vote account address if provided
-        if (!useReserve && showAdvancedOptions && voteAccountAddress) {
-          try {
-            params.voteAccountAddress = new PublicKey(voteAccountAddress);
-          } catch {
-            toast.error('Invalid vote account address');
-            return;
-          }
-        }
-        
+
         // Add stake receiver if provided
         if (!useReserve && showAdvancedOptions && stakeReceiver) {
           try {
@@ -282,23 +271,6 @@ const UnstakeTab: React.FC = () => {
               
               {showAdvancedOptions && (
                 <div className="mt-4 space-y-4 border p-4 rounded-md border-gray-200">
-                  <div>
-                    <label htmlFor="voteAccountAddress" className="block text-sm font-medium text-gray-700 mb-1">
-                      Vote Account Address (optional)
-                    </label>
-                    <input
-                      type="text"
-                      id="voteAccountAddress"
-                      value={voteAccountAddress}
-                      onChange={(e) => setVoteAccountAddress(e.target.value)}
-                      placeholder="Specific validator to withdraw from"
-                      className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Specify a validator to withdraw from. Leave empty for auto-selection.
-                    </p>
-                  </div>
-                  
                   <div>
                     <label htmlFor="stakeReceiver" className="block text-sm font-medium text-gray-700 mb-1">
                       Stake Receiver Address (optional)

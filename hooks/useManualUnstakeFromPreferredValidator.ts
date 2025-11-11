@@ -10,8 +10,6 @@ import {
   SystemProgram,
   TransactionInstruction,
   SYSVAR_CLOCK_PUBKEY,
-  Signer,
-  AccountMeta,
 } from '@solana/web3.js';
 import {
   JITO_MINT_ADDRESS,
@@ -23,128 +21,13 @@ import {
   getAssociatedTokenAddressSync,
   getAccount,
   TOKEN_PROGRAM_ID,
-  TokenInstruction,
 } from '@solana/spl-token';
 import toast from 'react-hot-toast';
 import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { struct, u8 } from '@solana/buffer-layout';
-import { u64 } from '@solana/buffer-layout-utils';
+import { PreferredWithdraw, getPreferredValidatorsApiUrl } from '../utils/preferredValidators';
+import { createApproveInstruction } from '../utils/spl-token';
 
-// Interface for API response
-interface PreferredWithdraw {
-  rank: number;
-  vote_account: string;
-  withdrawable_lamports: number;
-  stake_account: string;
-}
-
-// Helper to add signers to an instruction -- COPIED from spl stake pool package
-export function addSigners(
-  keys: AccountMeta[],
-  ownerOrAuthority: PublicKey,
-  multiSigners: (Signer | PublicKey)[],
-): AccountMeta[] {
-  if (multiSigners.length) {
-    keys.push({ pubkey: ownerOrAuthority, isSigner: false, isWritable: false });
-    for (const signer of multiSigners) {
-      keys.push({
-        pubkey: signer instanceof PublicKey ? signer : signer.publicKey,
-        isSigner: true,
-        isWritable: false,
-      });
-    }
-  } else {
-    keys.push({ pubkey: ownerOrAuthority, isSigner: true, isWritable: false });
-  }
-  return keys;
-}
-
-// COPIED from spl stake pool package
-export interface ApproveInstructionData {
-  instruction: TokenInstruction.Approve;
-  amount: bigint;
-}
-
-// COPIED from spl stake pool package
-export const approveInstructionData = struct<ApproveInstructionData>([u8('instruction'), u64('amount')]);
-
-/**
- * Construct an Approve instruction -- COPIED from spl stake pool package
- *
- * @param account      Account to set the delegate for
- * @param delegate     Account authorized to transfer tokens from the account
- * @param owner        Owner of the account
- * @param amount       Maximum number of tokens the delegate may transfer
- * @param multiSigners Signing accounts if `owner` is a multisig
- * @param programId    SPL Token program account
- *
- * @return Instruction to add to a transaction
- */
-export function createApproveInstruction(
-  account: PublicKey,
-  delegate: PublicKey,
-  owner: PublicKey,
-  amount: number | bigint,
-  multiSigners: (Signer | PublicKey)[] = [],
-  programId = TOKEN_PROGRAM_ID,
-): TransactionInstruction {
-  const keys = addSigners(
-    [
-      { pubkey: account, isSigner: false, isWritable: true },
-      { pubkey: delegate, isSigner: false, isWritable: false },
-    ],
-    owner,
-    multiSigners,
-  );
-
-  const data = Buffer.alloc(approveInstructionData.span);
-  approveInstructionData.encode(
-    {
-      instruction: TokenInstruction.Approve,
-      amount: BigInt(amount),
-    },
-    data,
-  );
-
-  return new TransactionInstruction({ keys, programId, data });
-}
-
-/**
- * Determines the API URL for fetching preferred validators based on network and environment configuration.
- * Priority:
- * 1. Uses NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL if defined (for local development)
- * 2. Falls back to network-specific Kobe API endpoints
- *
- * @param network - The current wallet adapter network
- * @returns The API URL to use for fetching preferred validators
- */
-const getPreferredValidatorsApiUrl = (network: WalletAdapterNetwork): string => {
-  // Check if env var is defined (for local development)
-  const envApiUrl = process.env.NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL;
-  if (envApiUrl) {
-    console.log('Using API URL from environment:', envApiUrl);
-    return envApiUrl;
-  }
-
-  // Fallback to Kobe API based on network
-  const apiPath = '/api/v1/preferred_withdraw_validator_list';
-  let baseUrl: string;
-
-  switch (network) {
-    case WalletAdapterNetwork.Testnet:
-      baseUrl = 'https://kobe.testnet.jito.network';
-      break;
-    case WalletAdapterNetwork.Mainnet:
-    default:
-      baseUrl = 'https://kobe.mainnet.jito.network';
-      break;
-  }
-
-  const apiUrl = `${baseUrl}${apiPath}`;
-  console.log(`Using ${network} API URL:`, apiUrl);
-  return apiUrl;
-};
 
 /**
  * Hook for manually unstaking JitoSOL into a stake account using preferred validators from API.

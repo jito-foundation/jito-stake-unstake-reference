@@ -10,8 +10,6 @@ import {
     SystemProgram,
     TransactionInstruction,
     SYSVAR_CLOCK_PUBKEY,
-    Signer,
-    AccountMeta,
 } from '@solana/web3.js';
 import {
     JITO_MINT_ADDRESS,
@@ -23,86 +21,12 @@ import {
     getAssociatedTokenAddressSync,
     getAccount,
     TOKEN_PROGRAM_ID,
-    TokenInstruction,
 } from '@solana/spl-token';
 import toast from 'react-hot-toast';
 import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { struct, u8 } from '@solana/buffer-layout';
-import { u64 } from '@solana/buffer-layout-utils';
+import { createApproveInstruction } from '../utils/spl-token';
 
-
-// Helper to add signers to an instruction -- COPIED from spl stake pool package
-export function addSigners(
-    keys: AccountMeta[],
-    ownerOrAuthority: PublicKey,
-    multiSigners: (Signer | PublicKey)[],
-): AccountMeta[] {
-    if (multiSigners.length) {
-        keys.push({ pubkey: ownerOrAuthority, isSigner: false, isWritable: false });
-        for (const signer of multiSigners) {
-            keys.push({
-                pubkey: signer instanceof PublicKey ? signer : signer.publicKey,
-                isSigner: true,
-                isWritable: false,
-            });
-        }
-    } else {
-        keys.push({ pubkey: ownerOrAuthority, isSigner: true, isWritable: false });
-    }
-    return keys;
-}
-
-
-// COPIED from spl stake pool package
-export interface ApproveInstructionData {
-    instruction: TokenInstruction.Approve;
-    amount: bigint;
-}
-
-// COPIED from spl stake pool package
-export const approveInstructionData = struct<ApproveInstructionData>([u8('instruction'), u64('amount')]);
-
-/**
- * Construct an Approve instruction -- COPIED from spl stake pool package
- *
- * @param account      Account to set the delegate for
- * @param delegate     Account authorized to transfer tokens from the account
- * @param owner        Owner of the account
- * @param amount       Maximum number of tokens the delegate may transfer
- * @param multiSigners Signing accounts if `owner` is a multisig
- * @param programId    SPL Token program account
- *
- * @return Instruction to add to a transaction
- */
-export function createApproveInstruction(
-    account: PublicKey,
-    delegate: PublicKey,
-    owner: PublicKey,
-    amount: number | bigint,
-    multiSigners: (Signer | PublicKey)[] = [],
-    programId = TOKEN_PROGRAM_ID,
-): TransactionInstruction {
-    const keys = addSigners(
-        [
-            { pubkey: account, isSigner: false, isWritable: true },
-            { pubkey: delegate, isSigner: false, isWritable: false },
-        ],
-        owner,
-        multiSigners,
-    );
-
-    const data = Buffer.alloc(approveInstructionData.span);
-    approveInstructionData.encode(
-        {
-            instruction: TokenInstruction.Approve,
-            amount: BigInt(amount),
-        },
-        data,
-    );
-
-    return new TransactionInstruction({ keys, programId, data });
-}
 
 // Helper to find stake account address (potentially internal to spl-stake-pool, replicating simplified version)
 async function findStakeProgramAddress(programId: PublicKey, voteAddress: PublicKey, stakePoolAddress: PublicKey): Promise<PublicKey> {
