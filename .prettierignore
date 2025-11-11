@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+.yarn
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Cache
+.cache
+.turbo
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env*.local
+
+# OS files
+.DS_Store
+
+# Lock files
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Coverage
+coverage
+.nyc_output
+
