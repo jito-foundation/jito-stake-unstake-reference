@@ -192,7 +192,7 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
    - Subject to available liquidity
    - Usually blocked by the Jito pool in favor of withdrawing stake
 
-#### Manual Methods
+#### Manual Method
 
 - **Withdraw Stake**
   - Manually creates the `WithdrawStake` instruction
