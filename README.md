@@ -195,18 +195,11 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
 
 #### Manual Methods
 
-- **Standard Withdraw Stake**
+- **Withdraw Stake**
   - Manually creates the `WithdrawStake` instruction
   - Finds a suitable validator stake account within the pool to withdraw from
   - Creates a new stake account for the user to receive the withdrawn stake
   - Also requires deactivation before the SOL is fully liquid
-
-- **Preferred Validators Withdraw Stake**
-  - Uses an external API to fetch an optimized list of preferred validators
-  - Selects validators based on available withdrawable liquidity
-  - Manually creates the `WithdrawStake` instruction with the selected validator
-  - Ensures sufficient liquidity is available for the withdrawal amount
-  - Configurable via `NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL` environment variable
 
 ## Important Considerations
 
