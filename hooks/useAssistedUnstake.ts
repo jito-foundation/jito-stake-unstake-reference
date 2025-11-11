@@ -106,13 +106,15 @@ export const useAssistedUnstake = () => {
         withdrawStakeArgs.push(voteAccountAddress); // voteAccountAddress (6th arg)
       }
 
-      if (unstakeParams.stakeReceiver) {
+      // Only add stakeReceiver if we don't have a voteAccountAddress to avoid validation conflicts
+      // The stake pool client validates that the stakeReceiver's delegation matches the voteAccountAddress
+      if (!voteAccountAddress && unstakeParams.stakeReceiver) {
         // withdrawStake uses positional args. If stakeReceiver (7th) is provided
         // but voteAccountAddress (6th) is not, we must provide a placeholder for the 6th arg.
-        if (!voteAccountAddress) {
-          withdrawStakeArgs.push(undefined as any);
-        }
+        withdrawStakeArgs.push(undefined as any); // placeholder for voteAccountAddress (6th arg)
         withdrawStakeArgs.push(unstakeParams.stakeReceiver); // stakeReceiver (7th arg)
+      } else if (voteAccountAddress && unstakeParams.stakeReceiver) {
+        console.warn('stakeReceiver parameter ignored when using preferred validator to avoid delegation conflicts');
       }
 
       console.log(
