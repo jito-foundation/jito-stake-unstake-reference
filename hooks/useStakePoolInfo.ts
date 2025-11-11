@@ -46,17 +46,14 @@ export const useStakePoolInfo = () => {
       setPoolInfo(null); // Reset pool info on new fetch
 
       if (!connection) {
-          setError("Wallet not connected");
-          setIsLoading(false);
-          return;
+        setError('Wallet not connected');
+        setIsLoading(false);
+        return;
       }
 
       try {
         // Get stake pool data
-        const stakePoolAccount = await solanaStakePool.getStakePoolAccount(
-          connection as any,
-          JITO_STAKE_POOL_ADDRESS
-        );
+        const stakePoolAccount = await solanaStakePool.getStakePoolAccount(connection as any, JITO_STAKE_POOL_ADDRESS);
 
         if (!stakePoolAccount?.account?.data) {
           throw new Error('Failed to fetch stake pool account data');
@@ -115,4 +112,4 @@ export const useStakePoolInfo = () => {
   }, [connection?.rpcEndpoint]);
 
   return { poolInfo, isLoading, error };
-}; 
+};

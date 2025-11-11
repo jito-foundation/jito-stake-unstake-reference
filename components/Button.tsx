@@ -34,8 +34,10 @@ const Button: React.FC<ButtonProps> = ({
           'w-full': width === 'full',
           'w-fit': width === 'fit',
           'bg-purple-600 text-white hover:bg-purple-700 disabled:bg-purple-300': kind === 'primary',
-          'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400': kind === 'secondary',
-          'border border-purple-600 bg-transparent text-purple-600 hover:bg-purple-50 disabled:border-purple-300 disabled:text-purple-300': kind === 'outline',
+          'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400':
+            kind === 'secondary',
+          'border border-purple-600 bg-transparent text-purple-600 hover:bg-purple-50 disabled:border-purple-300 disabled:text-purple-300':
+            kind === 'outline',
           'bg-transparent text-purple-600 hover:text-purple-700 disabled:text-gray-400 p-0': kind === 'bare',
           'opacity-70 cursor-not-allowed': disabled,
         },
@@ -52,4 +54,4 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-export default Button; 
+export default Button;
