@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
   Transaction,
@@ -29,8 +29,6 @@ export const useManualUnstake = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [txSignature, setTxSignature] = useState<string | null>(null);
   const { network } = useNetwork();
-
-  useMemo(() => {}, [connection]);
 
   /**
    * Manually creates and sends a transaction to unstake JitoSOL into a stake account.
