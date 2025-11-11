@@ -10,108 +10,18 @@ import {
   SystemProgram,
   TransactionInstruction,
   SYSVAR_CLOCK_PUBKEY,
-  Signer,
-  AccountMeta,
 } from '@solana/web3.js';
 import { JITO_MINT_ADDRESS, JITO_STAKE_POOL_ADDRESS, STAKE_POOL_PROGRAM_ID } from '../constants';
-import {
-  getStakePoolAccount,
-  ValidatorListLayout,
-  STAKE_POOL_PROGRAM_ID as StakePoolLibProgramId,
-} from '@solana/spl-stake-pool';
-import { getAssociatedTokenAddressSync, getAccount, TOKEN_PROGRAM_ID, TokenInstruction } from '@solana/spl-token';
+import { getStakePoolAccount } from '@solana/spl-stake-pool';
+import { getAssociatedTokenAddressSync, getAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import toast from 'react-hot-toast';
 import { useNetwork } from '../components/NetworkProvider';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { struct, u8 } from '@solana/buffer-layout';
-import { u64 } from '@solana/buffer-layout-utils';
-
-// Helper to add signers to an instruction -- COPIED from spl stake pool package
-export function addSigners(
-  keys: AccountMeta[],
-  ownerOrAuthority: PublicKey,
-  multiSigners: (Signer | PublicKey)[]
-): AccountMeta[] {
-  if (multiSigners.length) {
-    keys.push({ pubkey: ownerOrAuthority, isSigner: false, isWritable: false });
-    for (const signer of multiSigners) {
-      keys.push({
-        pubkey: signer instanceof PublicKey ? signer : signer.publicKey,
-        isSigner: true,
-        isWritable: false,
-      });
-    }
-  } else {
-    keys.push({ pubkey: ownerOrAuthority, isSigner: true, isWritable: false });
-  }
-  return keys;
-}
-
-// COPIED from spl stake pool package
-export interface ApproveInstructionData {
-  instruction: TokenInstruction.Approve;
-  amount: bigint;
-}
-
-// COPIED from spl stake pool package
-export const approveInstructionData = struct<ApproveInstructionData>([u8('instruction'), u64('amount')]);
+import { PreferredWithdraw, getPreferredValidatorsApiUrl } from '../utils/preferredValidators';
+import { createApproveInstruction } from '../utils/spl-token';
 
 /**
- * Construct an Approve instruction -- COPIED from spl stake pool package
- *
- * @param account      Account to set the delegate for
- * @param delegate     Account authorized to transfer tokens from the account
- * @param owner        Owner of the account
- * @param amount       Maximum number of tokens the delegate may transfer
- * @param multiSigners Signing accounts if `owner` is a multisig
- * @param programId    SPL Token program account
- *
- * @return Instruction to add to a transaction
- */
-export function createApproveInstruction(
-  account: PublicKey,
-  delegate: PublicKey,
-  owner: PublicKey,
-  amount: number | bigint,
-  multiSigners: (Signer | PublicKey)[] = [],
-  programId = TOKEN_PROGRAM_ID
-): TransactionInstruction {
-  const keys = addSigners(
-    [
-      { pubkey: account, isSigner: false, isWritable: true },
-      { pubkey: delegate, isSigner: false, isWritable: false },
-    ],
-    owner,
-    multiSigners
-  );
-
-  const data = Buffer.alloc(approveInstructionData.span);
-  approveInstructionData.encode(
-    {
-      instruction: TokenInstruction.Approve,
-      amount: BigInt(amount),
-    },
-    data
-  );
-
-  return new TransactionInstruction({ keys, programId, data });
-}
-
-// Helper to find stake account address (potentially internal to spl-stake-pool, replicating simplified version)
-async function findStakeProgramAddress(
-  programId: PublicKey,
-  voteAddress: PublicKey,
-  stakePoolAddress: PublicKey
-): Promise<PublicKey> {
-  const [publicKey] = await PublicKey.findProgramAddress(
-    [voteAddress.toBuffer(), stakePoolAddress.toBuffer()],
-    programId
-  );
-  return publicKey;
-}
-
-/**
- * Hook for manually unstaking JitoSOL into a stake account.
+ * Hook for manually unstaking JitoSOL into a stake account using preferred validators from API.
  */
 export const useManualUnstake = () => {
   const { connection } = useConnection();
@@ -122,6 +32,7 @@ export const useManualUnstake = () => {
 
   /**
    * Manually creates and sends a transaction to unstake JitoSOL into a stake account.
+   * Uses API to get preferred validators for optimal selection.
    * @param amount - Amount of JitoSOL to unstake (in JitoSOL, not lamports)
    */
   const unstake = async (amount: number): Promise<boolean> => {
@@ -136,7 +47,7 @@ export const useManualUnstake = () => {
     const loadingToastId = toast.loading(`Preparing unstake transaction...`);
 
     try {
-      console.log(`Manually unstaking ${amount} JitoSOL`);
+      console.log(`Manually unstaking ${amount} JitoSOL using preferred validators`);
 
       const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
       if (lamports <= 0) {
@@ -167,7 +78,9 @@ export const useManualUnstake = () => {
       const transaction = new Transaction();
       const signers: Keypair[] = [];
 
-      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 });
+      const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000,
+      });
       transaction.add(computeBudgetIx);
 
       const transferAuthority = Keypair.generate();
@@ -177,75 +90,64 @@ export const useManualUnstake = () => {
         createApproveInstruction(userPoolTokenAccount, transferAuthority.publicKey, wallet.publicKey, lamports)
       );
 
-      // --- Logic for withdrawing as stake account ---
-      toast.loading(`Finding suitable validator...`, { id: loadingToastId });
+      // --- Logic for withdrawing as stake account using Preferred Validator API ---
+      toast.loading(`Finding preferred validator via API...`, {
+        id: loadingToastId,
+      });
 
-      // Find a suitable validator stake account to withdraw FROM
-      const validatorListAccountInfo = await connection.getAccountInfo(stakePoolAccount.account.data.validatorList);
-      if (!validatorListAccountInfo) {
-        throw new Error('Failed to fetch validator list');
-      }
-      const validatorListData = ValidatorListLayout.decode(validatorListAccountInfo.data);
+      // Fetch preferred validators from API
+      const apiUrl = getPreferredValidatorsApiUrl(network);
 
-      // Find an active validator with enough balance
-      let suitableValidatorStakeAddress: PublicKey | null = null;
-      let activeValidatorVoteAddress: PublicKey | null = null;
+      let preferredValidators: PreferredWithdraw[] = [];
 
-      const minimumRequiredLamports_Mainnet = 3282880;
-      const minimumRequiredLamports_Testnet = 1002282880; // Value for testnet min
-      const minimumRequiredLamports =
-        network === WalletAdapterNetwork.Testnet ? minimumRequiredLamports_Testnet : minimumRequiredLamports_Mainnet;
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      console.log(`Using minimumRequiredLamports for ${network}: ${minimumRequiredLamports}`);
-
-      for (const validatorInfo of validatorListData.validators) {
-        if (validatorInfo.status !== 0) {
-          // Skip inactive validators
-          continue;
+        if (!response.ok) {
+          throw new Error(`API returned error status: ${response.status} ${response.statusText}`);
         }
 
-        const voteAddress = validatorInfo.voteAccountAddress;
+        preferredValidators = await response.json();
 
-        try {
-          const derivedStakeAddress = await findStakeProgramAddress(
-            StakePoolLibProgramId,
-            voteAddress,
-            JITO_STAKE_POOL_ADDRESS
-          );
-
-          const sourceStakeAccInfo = await connection.getAccountInfo(derivedStakeAddress);
-          if (!sourceStakeAccInfo) {
-            continue;
-          }
-          if (!sourceStakeAccInfo.owner.equals(StakeProgram.programId)) {
-            continue;
-          }
-
-          const estimatedNeededStakeLamports = Math.floor(lamports * 2); // Add 100% buffer
-          const availableLamports = sourceStakeAccInfo.lamports - minimumRequiredLamports;
-
-          console.log(`   -> Available lamports: ${availableLamports}`);
-          console.log(`   -> Estimated needed stake lamports: ${estimatedNeededStakeLamports}`);
-          // Check if the account has enough lamports ABOVE the minimum required
-          if (availableLamports > estimatedNeededStakeLamports) {
-            console.log(`   -> Suitable validator found! Using stake account ${derivedStakeAddress.toBase58()}`);
-            suitableValidatorStakeAddress = derivedStakeAddress;
-            activeValidatorVoteAddress = voteAddress;
-            break; // Found a suitable validator, exit the loop
-          } else {
-          }
-        } catch (e) {
-          console.warn(` - Error checking validator ${voteAddress.toBase58()}:`, e);
-          continue;
+        if (!Array.isArray(preferredValidators) || preferredValidators.length === 0) {
+          throw new Error('No preferred validators returned from API');
         }
+
+        console.log(`Received ${preferredValidators.length} preferred validators from API`);
+      } catch (apiError) {
+        console.error('Failed to fetch preferred validators:', apiError);
+        throw new Error(
+          `Failed to fetch preferred validators: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`
+        );
       }
 
-      if (!suitableValidatorStakeAddress || !activeValidatorVoteAddress) {
-        throw new Error('Could not find any active validator stake account with sufficient balance to withdraw from.');
+      // Try to find a validator with enough withdrawable lamports
+      const selectedValidator = preferredValidators.find((v) => v.withdrawable_lamports >= lamports);
+      if (selectedValidator) {
+        console.log(`Using preferred validator with rank ${selectedValidator.rank}`);
+      } else {
+        throw new Error(
+          `No validator has sufficient withdrawable balance. Requested: ${lamports} lamports, Max available: ${Math.max(...preferredValidators.map((v) => v.withdrawable_lamports))} lamports`
+        );
       }
 
-      const validatorStakeAccountAddress = suitableValidatorStakeAddress; // Use the found address
-      console.log(`Using derived validator stake account: ${validatorStakeAccountAddress.toBase58()}`);
+      // Convert API response strings to PublicKeys
+      let selectedValidatorStakeAddress: PublicKey;
+
+      try {
+        selectedValidatorStakeAddress = new PublicKey(selectedValidator.stake_account);
+      } catch (e) {
+        throw new Error(`Invalid public key in API response: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      }
+
+      console.log(`Using API-selected validator (rank ${selectedValidator.rank}):`);
+      console.log(`  Stake account: ${selectedValidatorStakeAddress.toBase58()}`);
+      console.log(`  Withdrawable lamports: ${selectedValidator.withdrawable_lamports}`);
 
       // Create temporary stake account to receive funds
       const tempStakeAccount = Keypair.generate();
@@ -267,19 +169,51 @@ export const useManualUnstake = () => {
       const withdrawStakeInstruction = new TransactionInstruction({
         programId: STAKE_POOL_PROGRAM_ID,
         keys: [
-          { pubkey: JITO_STAKE_POOL_ADDRESS, isSigner: false, isWritable: true },
-          { pubkey: stakePoolAccount.account.data.validatorList, isSigner: false, isWritable: true },
+          {
+            pubkey: JITO_STAKE_POOL_ADDRESS,
+            isSigner: false,
+            isWritable: true,
+          },
+          {
+            pubkey: stakePoolAccount.account.data.validatorList,
+            isSigner: false,
+            isWritable: true,
+          },
           { pubkey: withdrawAuthority, isSigner: false, isWritable: false },
-          { pubkey: validatorStakeAccountAddress, isSigner: false, isWritable: true }, // Source Validator Stake
-          { pubkey: tempStakeAccount.publicKey, isSigner: false, isWritable: true }, // Destination Stake (temp)
+          {
+            pubkey: selectedValidatorStakeAddress,
+            isSigner: false,
+            isWritable: true,
+          }, // Source Validator Stake
+          {
+            pubkey: tempStakeAccount.publicKey,
+            isSigner: false,
+            isWritable: true,
+          }, // Destination Stake (temp)
           { pubkey: wallet.publicKey!, isSigner: true, isWritable: false }, // Destination Authority (user)
-          { pubkey: transferAuthority.publicKey, isSigner: true, isWritable: false }, // Approver
+          {
+            pubkey: transferAuthority.publicKey,
+            isSigner: true,
+            isWritable: false,
+          }, // Approver
           { pubkey: userPoolTokenAccount, isSigner: false, isWritable: true },
-          { pubkey: stakePoolAccount.account.data.managerFeeAccount, isSigner: false, isWritable: true },
-          { pubkey: stakePoolAccount.account.data.poolMint, isSigner: false, isWritable: true },
+          {
+            pubkey: stakePoolAccount.account.data.managerFeeAccount,
+            isSigner: false,
+            isWritable: true,
+          },
+          {
+            pubkey: stakePoolAccount.account.data.poolMint,
+            isSigner: false,
+            isWritable: true,
+          },
           { pubkey: SYSVAR_CLOCK_PUBKEY, isSigner: false, isWritable: false },
           { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-          { pubkey: StakeProgram.programId, isSigner: false, isWritable: false },
+          {
+            pubkey: StakeProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
         ],
         data: (() => {
           // Create a buffer for the instruction data
@@ -309,10 +243,12 @@ export const useManualUnstake = () => {
       const signature = await connection.sendRawTransaction(signedTransaction.serialize());
       setTxSignature(signature);
 
-      toast.loading(`Confirming transaction... ${signature.substring(0, 8)}`, { id: loadingToastId });
+      toast.loading(`Confirming transaction... ${signature.substring(0, 8)}`, {
+        id: loadingToastId,
+      });
       await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
 
-      console.log('Manual unstake transaction successful:', signature);
+      console.log('Manual unstake (preferred validator) transaction successful:', signature);
       toast.dismiss(loadingToastId);
 
       // Main confirmation toast with link
@@ -329,7 +265,7 @@ export const useManualUnstake = () => {
 
       return true;
     } catch (err: any) {
-      console.error('Error in manual unstake:', err);
+      console.error('Error in manual unstake (preferred validator):', err);
       const message = err.message || 'Unstaking failed. Please try again.';
       toast.dismiss(loadingToastId);
       toast.error(message);

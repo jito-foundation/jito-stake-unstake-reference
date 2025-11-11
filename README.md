@@ -50,13 +50,21 @@ By offering both **Assisted** (library) and **Manual** (direct) methods for stak
     Note: The `@jito-foundation/stake-deposit-interceptor-sdk` package is installed from npm.
 
 3.  (Optional) Set up environment variables:
-    Create a `.env.local` file in the root directory. You can specify a custom Mainnet RPC endpoint if needed:
+    Create a `.env.local` file in the root directory. You can configure the following:
 
     ```
+    # Custom RPC endpoint for Solana connection
     NEXT_PUBLIC_RPC_URL=YOUR_CUSTOM_MAINNET_RPC_ENDPOINT
+
+    # Preferred validators API endpoint for optimized unstaking
+    NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL=YOUR_API_ENDPOINT
     ```
 
-    If not set, the default Solana public RPC for the selected network will be used.
+    **Environment Variables:**
+    - `NEXT_PUBLIC_RPC_URL`: Custom RPC endpoint. If not set, defaults to the public RPC for the selected network.
+    - `NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL`: API endpoint for fetching preferred validators during unstaking. If not set, defaults to:
+      - Testnet: `https://kobe.testnet.jito.network/api/v1/preferred_withdraw_validator_list`
+      - Mainnet: `https://kobe.mainnet.jito.network/api/v1/preferred_withdraw_validator_list`
 
 4.  Run the development server:
 
