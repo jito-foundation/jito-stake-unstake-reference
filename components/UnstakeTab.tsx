@@ -11,11 +11,8 @@ import toast from 'react-hot-toast';
 import { PublicKey } from '@solana/web3.js';
 
 const WalletMultiButton = dynamic(
-  () =>
-    import('@solana/wallet-adapter-react-ui').then(
-      (mod) => mod.WalletMultiButton,
-    ),
-  { ssr: false },
+  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
+  { ssr: false }
 );
 
 const UnstakeTab: React.FC = () => {
@@ -25,7 +22,7 @@ const UnstakeTab: React.FC = () => {
   const [voteAccountAddress, setVoteAccountAddress] = useState<string>('');
   const [stakeReceiver, setStakeReceiver] = useState<string>('');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(true);
-  
+
   const wallet = useWallet();
   const { connection } = useConnection();
   const [jitoSolBalance, setJitoSolBalance] = useState<number | null>(null);
@@ -36,10 +33,7 @@ const UnstakeTab: React.FC = () => {
   const fetchBalance = useCallback(async () => {
     if (wallet.publicKey) {
       try {
-        const userPoolTokenAccount = getAssociatedTokenAddressSync(
-          JITO_MINT_ADDRESS,
-          wallet.publicKey
-        );
+        const userPoolTokenAccount = getAssociatedTokenAddressSync(JITO_MINT_ADDRESS, wallet.publicKey);
 
         // Check if the account exists
         const accountInfo = await connection.getAccountInfo(userPoolTokenAccount);
@@ -72,21 +66,21 @@ const UnstakeTab: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!amount || !wallet.publicKey) return;
-    
+
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) return;
-    
+
     let success = false;
-    
+
     try {
       if (unstakeMethod === StakeMethod.ASSISTED_UNSTAKE) {
         // Prepare additional parameters for assisted unstake
         const params: UnstakeParams = {
-          useReserve: useReserve
+          useReserve: useReserve,
         };
-        
+
         // Add vote account address if provided
         if (!useReserve && showAdvancedOptions && voteAccountAddress) {
           try {
@@ -96,7 +90,7 @@ const UnstakeTab: React.FC = () => {
             return;
           }
         }
-        
+
         // Add stake receiver if provided
         if (!useReserve && showAdvancedOptions && stakeReceiver) {
           try {
@@ -106,13 +100,13 @@ const UnstakeTab: React.FC = () => {
             return;
           }
         }
-        
+
         // amount value is in JitoSOL -- not decimal adjusted
         success = await assistedUnstake.unstake(amountValue, params);
       } else {
         success = await manualUnstake.unstake(amountValue);
       }
-      
+
       if (success) {
         setAmount('');
         fetchBalance();
@@ -126,7 +120,7 @@ const UnstakeTab: React.FC = () => {
   return (
     <div className="w-full mx-auto p-2 sm:p-6 bg-white">
       <h2 className="text-2xl font-bold mb-6 text-black">Unstake JitoSOL to SOL</h2>
-      
+
       {!wallet.publicKey ? (
         <div className="flex flex-col items-center justify-center py-6">
           <p className="mb-4 text-gray-600">Connect your wallet to get started</p>
@@ -161,11 +155,9 @@ const UnstakeTab: React.FC = () => {
               className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          
+
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Unstake Method
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Unstake Method</label>
             <div className="flex gap-4">
               <button
                 type="button"
@@ -201,24 +193,22 @@ const UnstakeTab: React.FC = () => {
             <div className="mb-6">
               <div className="flex items-center">
                 <input
-                id="useReserve"
-                type="checkbox"
-                checked={useReserve}
-                onChange={(e) => setUseReserve(e.target.checked)}
-                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-              />
-              <label htmlFor="useReserve" className="ml-2 block text-sm text-gray-700">
-                Use reserve
-              </label>
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              {useReserve 
-                ? 'Receive SOL immediately with a fee.' 
-                : 'Receive SOL after the next epoch with no fee.'}
+                  id="useReserve"
+                  type="checkbox"
+                  checked={useReserve}
+                  onChange={(e) => setUseReserve(e.target.checked)}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="useReserve" className="ml-2 block text-sm text-gray-700">
+                  Use reserve
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                {useReserve ? 'Receive SOL immediately with a fee.' : 'Receive SOL after the next epoch with no fee.'}
               </p>
             </div>
           )}
-          
+
           {/* Advanced options for assisted unstaking without reserve */}
           {unstakeMethod === StakeMethod.ASSISTED_UNSTAKE && !useReserve && (
             <div className="mb-6">
@@ -229,7 +219,7 @@ const UnstakeTab: React.FC = () => {
               >
                 {showAdvancedOptions ? 'Hide advanced options' : 'Show advanced options'}
               </button>
-              
+
               {showAdvancedOptions && (
                 <div className="mt-4 space-y-4 border p-4 rounded-md border-gray-200">
                   <div>
@@ -248,7 +238,7 @@ const UnstakeTab: React.FC = () => {
                       Specify a validator to withdraw from. Leave empty for auto-selection.
                     </p>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="stakeReceiver" className="block text-sm font-medium text-gray-700 mb-1">
                       Stake Receiver Address (optional)
@@ -262,26 +252,22 @@ const UnstakeTab: React.FC = () => {
                       className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Existing stake account to receive unstaked SOL. Must be delegated to the same validator if specified above.
+                      Existing stake account to receive unstaked SOL. Must be delegated to the same validator if
+                      specified above.
                     </p>
                   </div>
                 </div>
               )}
             </div>
           )}
-          
+
           <Button
             type="button"
             label="Unstake JitoSOL"
             width="full"
             onClick={handleSubmit}
             loading={assistedUnstake.isLoading || manualUnstake.isLoading}
-            disabled={
-              !amount || 
-              parseFloat(amount) <= 0 || 
-              assistedUnstake.isLoading || 
-              manualUnstake.isLoading
-            }
+            disabled={!amount || parseFloat(amount) <= 0 || assistedUnstake.isLoading || manualUnstake.isLoading}
           />
         </>
       )}
@@ -289,4 +275,4 @@ const UnstakeTab: React.FC = () => {
   );
 };
 
-export default UnstakeTab; 
+export default UnstakeTab;

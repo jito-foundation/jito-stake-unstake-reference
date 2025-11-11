@@ -22,7 +22,6 @@ export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9
 export const WRAPPED_SOL_TOKEN_MINT_STRING = 'So11111111111111111111111111111111111111112';
 export const WRAPPED_SOL_TOKEN_MINT = new PublicKey(WRAPPED_SOL_TOKEN_MINT_STRING);
 
-
 // Constants for calculations
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 export const DELAYED_UNSTAKE_FEE = 0.003; // 0.3%
