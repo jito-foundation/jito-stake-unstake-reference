@@ -48,11 +48,20 @@ By offering both **Assisted** (library) and **Manual** (direct) methods for stak
     Note: The `@jito-foundation/stake-deposit-interceptor-sdk` package is installed from npm.
 
 3.  (Optional) Set up environment variables:
-    Create a `.env.local` file in the root directory. You can specify a custom Mainnet RPC endpoint if needed:
+    Create a `.env.local` file in the root directory. You can configure the following:
     ```
+    # Custom RPC endpoint for Solana connection
     NEXT_PUBLIC_RPC_URL=YOUR_CUSTOM_MAINNET_RPC_ENDPOINT
+
+    # Preferred validators API endpoint for optimized unstaking
+    NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL=YOUR_API_ENDPOINT
     ```
-    If not set, the default Solana public RPC for the selected network will be used.
+
+    **Environment Variables:**
+    - `NEXT_PUBLIC_RPC_URL`: Custom RPC endpoint. If not set, defaults to the public RPC for the selected network.
+    - `NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL`: API endpoint for fetching preferred validators during unstaking. If not set, defaults to:
+      - Testnet: `https://kobe.testnet.jito.network/api/v1/preferred_withdraw_validator_list`
+      - Mainnet: `https://kobe.mainnet.jito.network/api/v1/preferred_withdraw_validator_list`
 
 4.  Run the development server:
     ```bash
@@ -87,6 +96,7 @@ These hooks encapsulate the core logic for interacting with the stake pool. The 
 *   **`useManualStakeDeposit.ts`**: Implements stake account deposit by manually constructing the transaction with the stake-deposit-interceptor program. Accepts an existing delegated stake account, authorizes it, and builds the `DepositStake` instruction manually. Provides full control over the deposit process.
 *   **`useAssistedUnstake.ts`**: Implements unstaking using the `@solana/spl-stake-pool` library (`withdrawSol` or `withdrawStake`), handling reserve and delayed options.
 *   **`useManualUnstake.ts`**: Implements unstaking by manually constructing the `WithdrawStake` transaction instruction, creating a new stake account for the user. Shows how to find validator stake accounts, manage temporary accounts, build the instruction manually, and handle necessary signers. Serves as a detailed example for custom unstaking flows. *Note: This hook replicates some helper functions from the SPL library for instruction creation.*.
+*   **`useManualUnstakeFromPreferredValidator.ts`**: Implements optimized unstaking using preferred validators. Fetches a prioritized list of validators via API (configurable with `NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL`) to select validators with optimal withdrawable liquidity. Manually constructs the `WithdrawStake` instruction while intelligently selecting the best validator based on available stake and withdrawal requirements.
 
 ### Constants (`constants/index.ts`)
 
@@ -173,12 +183,19 @@ export const STAKE_POOL_PROGRAM_ID = new PublicKey('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47
    * Subject to available liquidity
    * Usually blocked by the Jito pool in favor of withdrawing stake
 
-#### Manual Method
-* **Withdraw Stake**
+#### Manual Methods
+* **Standard Withdraw Stake**
    * Manually creates the `WithdrawStake` instruction
    * Finds a suitable validator stake account within the pool to withdraw from
    * Creates a new stake account for the user to receive the withdrawn stake
    * Also requires deactivation before the SOL is fully liquid
+
+* **Preferred Validators Withdraw Stake**
+   * Uses an external API to fetch an optimized list of preferred validators
+   * Selects validators based on available withdrawable liquidity
+   * Manually creates the `WithdrawStake` instruction with the selected validator
+   * Ensures sufficient liquidity is available for the withdrawal amount
+   * Configurable via `NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL` environment variable
 
 ## Important Considerations
 
