@@ -23,11 +23,7 @@ interface NetworkProviderProps {
 export const NetworkProvider: React.FC<NetworkProviderProps> = ({ children }) => {
   const [network, setNetwork] = useState<WalletAdapterNetwork>(WalletAdapterNetwork.Mainnet);
 
-  return (
-    <NetworkContext.Provider value={{ network, setNetwork }}>
-      {children}
-    </NetworkContext.Provider>
-  );
+  return <NetworkContext.Provider value={{ network, setNetwork }}>{children}</NetworkContext.Provider>;
 };
 
-export default NetworkProvider; 
+export default NetworkProvider;

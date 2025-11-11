@@ -1,5 +1,5 @@
-import "@/styles/globals.css";
-import type { AppProps } from "next/app";
+import '@/styles/globals.css';
+import type { AppProps } from 'next/app';
 import { WalletContextProvider } from '../components/WalletContextProvider';
 import { NetworkProvider, useNetwork } from '../components/NetworkProvider';
 import Navbar from '../components/Navbar';
@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 
 function AppContent({ Component, pageProps }: AppProps) {
   const { network, setNetwork } = useNetwork();
-  
+
   return (
     <>
       <Navbar onNetworkChange={setNetwork} currentNetwork={network} />
@@ -21,7 +21,7 @@ export default function App(props: AppProps) {
     <NetworkProvider>
       <WalletContextProvider>
         <AppContent {...props} />
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
             duration: 5000,

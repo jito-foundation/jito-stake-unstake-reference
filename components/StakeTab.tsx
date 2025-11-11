@@ -11,12 +11,9 @@ import { PublicKey } from '@solana/web3.js';
 import dynamic from 'next/dynamic';
 
 const WalletMultiButton = dynamic(
-  () =>
-    import('@solana/wallet-adapter-react-ui').then(
-      (mod) => mod.WalletMultiButton,
-    ),
-  { ssr: false },
-)
+  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
+  { ssr: false }
+);
 
 const StakeTab: React.FC = () => {
   const [amount, setAmount] = useState<string>('');
@@ -115,8 +112,7 @@ const StakeTab: React.FC = () => {
   };
 
   const isStakeDepositMethod =
-    stakeMethod === StakeMethod.ASSISTED_STAKE_DEPOSIT ||
-    stakeMethod === StakeMethod.MANUAL_STAKE_DEPOSIT;
+    stakeMethod === StakeMethod.ASSISTED_STAKE_DEPOSIT || stakeMethod === StakeMethod.MANUAL_STAKE_DEPOSIT;
 
   return (
     <div className="w-full mx-auto p-2 sm:p-6 bg-white">
@@ -130,9 +126,7 @@ const StakeTab: React.FC = () => {
       ) : (
         <>
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Stake Method
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Stake Method</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -229,10 +223,7 @@ const StakeTab: React.FC = () => {
                 onClick={handleSolDeposit}
                 loading={assistedSolDeposit.isLoading || manualSolDeposit.isLoading}
                 disabled={
-                  !amount ||
-                  parseFloat(amount) <= 0 ||
-                  assistedSolDeposit.isLoading ||
-                  manualSolDeposit.isLoading
+                  !amount || parseFloat(amount) <= 0 || assistedSolDeposit.isLoading || manualSolDeposit.isLoading
                 }
               />
             </>
@@ -288,11 +279,7 @@ const StakeTab: React.FC = () => {
                   width="full"
                   onClick={handleCreateStakeAccount}
                   loading={createStakeAccount.isLoading}
-                  disabled={
-                    !amount ||
-                    parseFloat(amount) <= 0 ||
-                    createStakeAccount.isLoading
-                  }
+                  disabled={!amount || parseFloat(amount) <= 0 || createStakeAccount.isLoading}
                 />
               </div>
 
@@ -313,7 +300,8 @@ const StakeTab: React.FC = () => {
                     className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    The stake account must be delegated to a validator in the pool. The validator will be detected automatically.
+                    The stake account must be delegated to a validator in the pool. The validator will be detected
+                    automatically.
                   </p>
                 </div>
 
@@ -323,16 +311,11 @@ const StakeTab: React.FC = () => {
                   width="full"
                   onClick={handleDepositStakeAccount}
                   loading={assistedStakeDeposit.isLoading || manualStakeDeposit.isLoading}
-                  disabled={
-                    !stakeAccountAddress ||
-                    assistedStakeDeposit.isLoading ||
-                    manualStakeDeposit.isLoading
-                  }
+                  disabled={!stakeAccountAddress || assistedStakeDeposit.isLoading || manualStakeDeposit.isLoading}
                 />
               </div>
             </>
           )}
-
         </>
       )}
     </div>

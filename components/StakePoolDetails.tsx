@@ -6,8 +6,19 @@ import BN from 'bn.js';
 
 // Simple Copy Icon
 const CopyIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline ml-1 text-gray-500 hover:text-gray-700 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4 inline ml-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+    />
   </svg>
 );
 
@@ -32,9 +43,9 @@ const formatLamports = (lamports: BN | undefined): string => {
 
 // Helper to format BN tokens (assuming JitoSOL has 9 decimals like SOL)
 const formatPoolTokens = (tokens: BN | undefined): string => {
-    if (tokens === undefined) return 'N/A';
-    // JitoSOL (pool token) also has 9 decimal places
-    return (Number(tokens.toString()) / 1_000_000_000).toLocaleString(undefined, { maximumFractionDigits: 4 });
+  if (tokens === undefined) return 'N/A';
+  // JitoSOL (pool token) also has 9 decimal places
+  return (Number(tokens.toString()) / 1_000_000_000).toLocaleString(undefined, { maximumFractionDigits: 4 });
 };
 
 // Helper to format fee percentage
@@ -45,9 +56,9 @@ const formatFee = (fee: number | null | undefined): string => {
 
 // Helper to format SOL/JitoSOL conversion rate
 const formatConversion = (rate: number | undefined): string => {
-    if (rate === undefined) return 'N/A';
-    // Display how many SOL you get for 1 JitoSOL
-    return `${rate.toFixed(6)} SOL / JitoSOL`;
+  if (rate === undefined) return 'N/A';
+  // Display how many SOL you get for 1 JitoSOL
+  return `${rate.toFixed(6)} SOL / JitoSOL`;
 };
 
 // Define type for details array items
@@ -64,12 +75,15 @@ const StakePoolDetails: React.FC<StakePoolDetailsProps> = ({ poolInfo, isLoading
 
   const handleCopy = (text: string | undefined, label: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedAddress(label); // Set the label of the copied item
-      setTimeout(() => setCopiedAddress(null), 1500); // Reset after 1.5 seconds
-    }).catch(err => {
-      console.error('Failed to copy text: ', err);
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedAddress(label); // Set the label of the copied item
+        setTimeout(() => setCopiedAddress(null), 1500); // Reset after 1.5 seconds
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
   };
 
   if (isLoading) {
@@ -85,15 +99,45 @@ const StakePoolDetails: React.FC<StakePoolDetailsProps> = ({ poolInfo, isLoading
   }
 
   const allDetails: DetailItem[] = [
-    { label: 'Pool Address', value: formatPublicKey(poolInfo.pubkey), rawValue: poolInfo.pubkey.toBase58(), type: 'address' },
-    { label: 'Pool Mint', value: formatPublicKey(poolInfo.poolMint), rawValue: poolInfo.poolMint.toBase58(), type: 'address' },
+    {
+      label: 'Pool Address',
+      value: formatPublicKey(poolInfo.pubkey),
+      rawValue: poolInfo.pubkey.toBase58(),
+      type: 'address',
+    },
+    {
+      label: 'Pool Mint',
+      value: formatPublicKey(poolInfo.poolMint),
+      rawValue: poolInfo.poolMint.toBase58(),
+      type: 'address',
+    },
     { label: 'Total SOL Staked', value: formatLamports(poolInfo.totalLamports), type: 'number' },
     { label: 'Total JitoSOL Supply', value: formatPoolTokens(poolInfo.totalPoolTokens), type: 'number' },
     { label: 'SOL per JitoSOL', value: formatConversion(poolInfo.solJitoConversion), type: 'rate' },
-    { label: 'Reserve Stake Account', value: formatPublicKey(poolInfo.reserveStake), rawValue: poolInfo.reserveStake.toBase58(), type: 'address' },
-    { label: 'Manager', value: formatPublicKey(poolInfo.manager), rawValue: poolInfo.manager.toBase58(), type: 'address' },
-    { label: 'Manager Fee Account', value: formatPublicKey(poolInfo.managerFeeAccount), rawValue: poolInfo.managerFeeAccount.toBase58(), type: 'address' },
-    { label: 'Validator List', value: formatPublicKey(poolInfo.validatorList), rawValue: poolInfo.validatorList.toBase58(), type: 'address' },
+    {
+      label: 'Reserve Stake Account',
+      value: formatPublicKey(poolInfo.reserveStake),
+      rawValue: poolInfo.reserveStake.toBase58(),
+      type: 'address',
+    },
+    {
+      label: 'Manager',
+      value: formatPublicKey(poolInfo.manager),
+      rawValue: poolInfo.manager.toBase58(),
+      type: 'address',
+    },
+    {
+      label: 'Manager Fee Account',
+      value: formatPublicKey(poolInfo.managerFeeAccount),
+      rawValue: poolInfo.managerFeeAccount.toBase58(),
+      type: 'address',
+    },
+    {
+      label: 'Validator List',
+      value: formatPublicKey(poolInfo.validatorList),
+      rawValue: poolInfo.validatorList.toBase58(),
+      type: 'address',
+    },
     { label: 'SOL Deposit Fee', value: formatFee(poolInfo.solDepositFee), type: 'percentage' },
     { label: 'Stake Deposit Fee', value: formatFee(poolInfo.stakeDepositFee), type: 'percentage' },
     { label: 'SOL Withdrawal Fee', value: formatFee(poolInfo.solWithdrawalFee), type: 'percentage' },
@@ -133,8 +177,8 @@ const StakePoolDetails: React.FC<StakePoolDetailsProps> = ({ poolInfo, isLoading
           {isExpanded ? 'Show Less' : 'Show More'}
         </button>
       </div>
-       {/* Display raw data for debugging if needed */}
-       {/* <pre className="mt-4 text-xs overflow-auto bg-gray-50 p-2 rounded">
+      {/* Display raw data for debugging if needed */}
+      {/* <pre className="mt-4 text-xs overflow-auto bg-gray-50 p-2 rounded">
          {JSON.stringify(poolInfo, (key, value) =>
            typeof value === 'bigint' ? value.toString() : // Convert BigInt to string for JSON.stringify
            value instanceof PublicKey ? value.toBase58() : // Convert PublicKey to string
@@ -146,4 +190,4 @@ const StakePoolDetails: React.FC<StakePoolDetailsProps> = ({ poolInfo, isLoading
   );
 };
 
-export default StakePoolDetails; 
+export default StakePoolDetails;

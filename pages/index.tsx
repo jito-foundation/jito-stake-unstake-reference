@@ -21,9 +21,7 @@ export default function Home() {
       <main className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">JitoSOL / Staking Reference Site</h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Stake and Unstake SOL Examples
-          </p>
+          <p className="mt-2 text-lg text-gray-600">Stake and Unstake SOL Examples</p>
         </div>
 
         <StakePoolDetails poolInfo={poolInfo} isLoading={isLoading} error={error} />
@@ -51,18 +49,14 @@ export default function Home() {
               Unstake
             </button>
           </div>
-          <div className="p-6">
-            {activeTab === WidgetMode.Stake ? <StakeTab /> : <UnstakeTab />}
-          </div>
+          <div className="p-6">{activeTab === WidgetMode.Stake ? <StakeTab /> : <UnstakeTab />}</div>
         </div>
 
         <div className="mt-16 text-center text-sm sm:text-base">
-          <p className="text-gray-500">
-            This is a reference implementation for educational purposes.
-          </p>
-          <a 
-            href="https://jito.network/" 
-            target="_blank" 
+          <p className="text-gray-500">This is a reference implementation for educational purposes.</p>
+          <a
+            href="https://jito.network/"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-purple-600 hover:underline"
           >
