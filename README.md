@@ -100,7 +100,6 @@ These hooks encapsulate the core logic for interacting with the stake pool. The 
 - **`useManualStakeDeposit.ts`**: Implements stake account deposit by manually constructing the transaction with the stake-deposit-interceptor program. Accepts an existing delegated stake account, authorizes it, and builds the `DepositStake` instruction manually. Provides full control over the deposit process.
 - **`useAssistedUnstake.ts`**: Implements unstaking using the `@solana/spl-stake-pool` library (`withdrawSol` or `withdrawStake`), handling reserve and delayed options.
 - **`useManualUnstake.ts`**: Implements unstaking by manually constructing the `WithdrawStake` transaction instruction, creating a new stake account for the user. Shows how to find validator stake accounts, manage temporary accounts, build the instruction manually, and handle necessary signers. Serves as a detailed example for custom unstaking flows. _Note: This hook replicates some helper functions from the SPL library for instruction creation._.
-- **`useManualUnstakeFromPreferredValidator.ts`**: Implements optimized unstaking using preferred validators. Fetches a prioritized list of validators via API (configurable with `NEXT_PUBLIC_PREFERRED_VALIDATORS_API_URL`) to select validators with optimal withdrawable liquidity. Manually constructs the `WithdrawStake` instruction while intelligently selecting the best validator based on available stake and withdrawal requirements.
 
 ### Constants (`constants/index.ts`)
 
